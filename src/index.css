@@ -1,13 +1,17 @@
 .compass-arrow {
   width: 40px;
   height: 40px;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-bottom: 40px solid red;
-  transform-origin: center center;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  background-color: red;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  margin: 20px auto;
   transition: transform 0.1s ease;
+}
+
+.compass-arrow::before {
+  content: '↑';
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import locations from '../../data/locations.json';
+import locations from '../data/locations.json';
 import { calculateDistance, calculateBearing } from '../utils/geoUtils';
 
 const Compass = () => {

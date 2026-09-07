@@ -33,6 +33,8 @@ const Compass = () => {
     return (360 - (bearing + alpha)) % 360;
   };
 
+  const rotationAngle = calculateArrowAngle();
+
   return (
     <div>
       <select value={selectedLocation?.id} onChange={(e) => setSelectedLocation(locations.find(loc => loc.id === parseInt(e.target.value)))}>
@@ -42,11 +44,7 @@ const Compass = () => {
       </select>
       <div className="compass">
         <div>{userPosition ? `Координаты: ${userPosition.latitude}, ${userPosition.longitude}` : 'Координаты: неизвестно'}</div>
-        {userPosition && alpha !== null ? (
-          <div className="compass-arrow" style={{ transform: `rotate(${calculateArrowAngle()}deg)` }}></div>
-        ) : (
-          <div className="compass-arrow" style={{ transform: 'rotate(0deg)' }}></div>
-        )}
+        <div className="compass-arrow" style={{ transform: `rotate(${rotationAngle}deg)` }}></div>
       </div>
     </div>
   );

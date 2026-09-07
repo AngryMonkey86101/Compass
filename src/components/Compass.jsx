@@ -41,10 +41,11 @@ const Compass = () => {
         ))}
       </select>
       <div className="compass">
-        {userPosition ? (
+        <div>{userPosition ? `Координаты: ${userPosition.latitude}, ${userPosition.longitude}` : 'Координаты: неизвестно'}</div>
+        {userPosition && alpha !== null ? (
           <div className="compass-arrow" style={{ transform: `rotate(${calculateArrowAngle()}deg)` }}></div>
         ) : (
-          'Ищем спутники...'
+          <div className="compass-arrow" style={{ transform: 'rotate(0deg)' }}></div>
         )}
       </div>
     </div>

@@ -82,19 +82,6 @@ export default function Compass() {
 
       <p>Расстояние: {distance}</p>
 
-      <div style={{ margin: '30px 0', padding: '20px', background: '#f5f5f5', borderRadius: '10px' }}>
-        <p>Эмуляция поворота (alpha): {alpha}</p>
-        <input
-          type="range"
-          min="0"
-          max="360"
-          value={alpha}
-          onChange={(e) => setAlpha(Number(e.target.value))}
-          style={{ width: '80%' }}
-        />
-        <p style={{ fontSize: '12px', color: '#666' }}>Итоговый поворот стрелки: {rotation}</p>
-      </div>
-
       <svg
         viewBox="0 0 24 24"
         width="150"

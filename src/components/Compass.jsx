@@ -35,7 +35,7 @@ const Compass = () => {
     const { lat: targetLat, lon: targetLon } = selectedLocation;
 
     const bearing = calculateBearing(userLat, userLon, targetLat, targetLon);
-    const rotation = bearing - alpha; // Вычисление угла вращения
+    const rotation = (bearing - alpha) % 360; // Вычисление угла вращения
     return rotation;
   };
 
@@ -57,6 +57,7 @@ const Compass = () => {
       <p>Угол (alpha): {alpha}</p>
       <input type="range" min="0" max="360" value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} />
       <label htmlFor="alphaSlider">Тест вращения</label>
+      <p>Итоговый поворот (rotation): {rotationAngle}</p>
     </div>
   );
 };

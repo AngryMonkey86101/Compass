@@ -173,25 +173,6 @@ export default function Compass() {
         </button>
       </div>
 
-      {/* Ручное добавление точки */}
-      <div style={{ ...cardStyle, textAlign: 'center' }}>
-        <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Новая точка</p>
-        <input
-          type="text" placeholder="Название (напр. Дом)" value={newName}
-          onChange={(e) => setNewName(e.target.value)} style={inputStyle}
-        />
-        <input
-          type="text" placeholder="Широта, Долгота" value={newCoords}
-          onChange={(e) => setNewCoords(e.target.value)} style={inputStyle}
-        />
-        <button
-          onClick={handleAddLocation}
-          style={buttonStyle}
-        >
-          Добавить
-        </button>
-      </div>
-
       {/* Блок Компаса */}
       {selectedLocation ? (
         <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -235,6 +216,25 @@ export default function Compass() {
       ) : (
         <p style={{ color: '#8e8e93', marginTop: '40px', fontWeight: '500' }}>Добавьте точку для навигации</p>
       )}
+
+      {/* Ручное добавление точки */}
+      <div style={{ ...cardStyle, textAlign: 'center' }}>
+        <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Новая точка</p>
+        <input
+          type="text" placeholder="Название (напр. Дом)" value={newName}
+          onChange={(e) => setNewName(e.target.value)} style={inputStyle}
+        />
+        <input
+          type="text" placeholder="Широта, Долгота" value={newCoords}
+          onChange={(e) => setNewCoords(e.target.value)} style={inputStyle}
+        />
+        <button
+          onClick={handleAddLocation}
+          style={buttonStyle}
+        >
+          Добавить
+        </button>
+      </div>
 
       {/* Телеметрия */}
       {coords ? (

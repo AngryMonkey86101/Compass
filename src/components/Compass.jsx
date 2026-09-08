@@ -1,36 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { calculateDistance, calculateBearing } from '../utils/geoUtils';
 
-const locations = [
-  {
-    "name": "Северный полюс",
-    "lat": 90.0,
-    "lon": 0.0
-  },
-  {
-    "name": "Москва (Красная площадь)",
-    "lat": 55.7535,
-    "lon": 37.6210
-  },
-  {
-    "name": "Париж (Эйфелева башня)",
-    "lat": 48.8584,
-    "lon": 2.2945
-  },
-  {
-    "name": "Токио (Сибуя)",
-    "lat": 35.6595,
-    "lon": 139.7005
-  },
-  {
-    "name": "Нью-Йорк (Таймс-сквер)",
-    "lat": 40.7580,
-    "lon": -73.9855
-  }
-];
+const compassLocations = 'compassLocations';
 
 export default function Compass() {
-  const [selectedLocation, setSelectedLocation] = useState(locations[0]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [coords, setCoords] = useState(null);
   const [alpha, setAlpha] = useState(0);
 
@@ -59,6 +33,45 @@ export default function Compass() {
     };
   }, []);
 
+  const [savedLocations, setSavedLocations] = useState(() => {
+    const saved = localStorage.getItem(compassLocations);
+    return saved ? JSON.parse(saved) : [
+      { id: 1, name: 'Северный полюс', lat: 90.0, lon: 0.0 },
+      { id: 2, name: 'Москва (Красная площадь)', lat: 55.7535, lon: 37.6210 },
+      { id: 3, name: 'Париж (Эйфелева башня)', lat: 48.8584, lon: 2.2945 },
+      { id: 4, name: 'Токио (Сибуя)', lat: 35.6595, lon: 139.7005 },
+      { id: 5, name: 'Нью-Йорк (Таймс-сквер)', lat: 40.7580, lon: -73.9855 }
+    ];
+  });
+
+  const [newLocationName, setNewLocationName] = useState('');
+  const [newLocationCoords, setNewLocationCoords] = useState('');
+
+  useEffect(() => {
+    if (savedLocations.length > 0) {
+      setSelectedLocation(savedLocations[0]);
+    }
+  }, [savedLocations]);
+
+  const handleAddLocation = () => {
+    const [latStr, lonStr] = newLocationCoords.split(',').map(coord => coord.trim());
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+
+    if (!isNaN(lat) && !isNaN(lon)) {
+      const newLocation = {
+        id: savedLocations.length + 1,
+        name: newLocationName,
+        lat,
+        lon
+      };
+
+      setSavedLocations([...savedLocations, newLocation]);
+      localStorage.setItem(compassLocations, JSON.stringify([...savedLocations, newLocation]));
+      setSelectedLocation(newLocation);
+    }
+  };
+
   const bearing = coords ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
   // Безопасное вычисление угла поворота
   const rotation = (Number(bearing) - Number(alpha)) % 360;
@@ -68,14 +81,34 @@ export default function Compass() {
     <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
       <h2>Компас</h2>
 
+      <input
+        type="text"
+        placeholder="Название точки"
+        value={newLocationName}
+        onChange={(e) => setNewLocationName(e.target.value)}
+        style={{ padding: '8px', fontSize: '16px', marginBottom: '10px' }}
+      />
+
+      <input
+        type="text"
+        placeholder="Координаты (56.911076, 60.796712)"
+        value={newLocationCoords}
+        onChange={(e) => setNewLocationCoords(e.target.value)}
+        style={{ padding: '8px', fontSize: '16px', marginBottom: '10px' }}
+      />
+
+      <button onClick={handleAddLocation} style={{ padding: '8px 16px', fontSize: '16px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        Добавить точку
+      </button>
+
       <select
         onChange={(e) => {
-          const loc = locations.find(l => l.name === e.target.value);
+          const loc = savedLocations.find(l => l.name === e.target.value);
           if (loc) setSelectedLocation(loc);
         }}
         style={{ padding: '8px', fontSize: '16px', marginBottom: '20px' }}
       >
-        {locations.map(l => (
+        {savedLocations.map(l => (
           <option key={l.id} value={l.name}>{l.name}</option>
         ))}
       </select>

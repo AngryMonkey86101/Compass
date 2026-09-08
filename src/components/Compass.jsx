@@ -30,7 +30,11 @@ export default function Compass() {
   useEffect(() => {
     if ('geolocation' in navigator) {
       const watchId = navigator.geolocation.watchPosition(
-        (pos) => setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        (pos) => setCoords({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        }),
         (err) => console.error(err),
         { enableHighAccuracy: true }
       );
@@ -77,6 +81,14 @@ export default function Compass() {
     setSavedLocations(updated);
     localStorage.setItem(compassLocations, JSON.stringify(updated));
     setSelectedLocation(updated.length > 0 ? updated[0] : null);
+  };
+
+  // Функция для определения цвета текста точности
+  const getAccuracyColor = (acc) => {
+    if (!acc) return '#888';
+    if (acc <= 15) return '#4CAF50'; // Зеленый (Отлично)
+    if (acc <= 50) return '#FF9800'; // Оранжевый (Нормально)
+    return '#F44336'; // Красный (Плохо)
   };
 
   return (
@@ -131,12 +143,33 @@ export default function Compass() {
         </button>
       </div>
 
-      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '20px 0' }}>Расстояние: {distance}</p>
+      {/* Блок Телеметрии */}
+      <div style={{ margin: '20px auto', padding: '10px', background: '#e3f2fd', borderRadius: '8px', maxWidth: '300px', fontSize: '14px' }}>
+        <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Ваша геопозиция:</p>
+        {coords ? (
+          <>
+            <p style={{ margin: '2px 0', fontFamily: 'monospace', fontSize: '15px' }}>
+              {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
+            </p>
+            <p style={{ margin: '4px 0 0 0', fontWeight: 'bold', color: getAccuracyColor(coords.accuracy) }}>
+              Точность сигнала: {Math.round(coords.accuracy)} м
+            </p>
+          </>
+        ) : (
+          <p style={{ margin: '2px 0', color: '#666' }}>Поиск спутников GPS...</p>
+        )}
+      </div>
+
+      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '20px 0' }}>Расстояние до цели: {distance}</p>
 
       {selectedLocation ? (
         <div style={{ position: 'relative', width: '240px', height: '240px', margin: '0 auto' }}>
-          {/* Внешний циферблат (указывает на Север) */}
-          <svg viewBox="0 0 100 100" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', transform: `rotate(-${alpha}deg)`, transition: 'transform 0.1s ease' }}>
+          {/* Внешний циферблат */}
+          <svg viewBox="0 0 100 100" style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            transform: `rotate(-${alpha}deg)`,
+            transition: 'transform 0.1s ease'
+          }}>
             <circle cx="50" cy="50" r="48" fill="#fafafa" stroke="#ddd" strokeWidth="2" />
             <circle cx="50" cy="50" r="35" fill="none" stroke="#eee" strokeWidth="1" />
             <text x="50" y="15" textAnchor="middle" fill="#ff4444" fontSize="12" fontWeight="bold">N</text>
@@ -149,8 +182,13 @@ export default function Compass() {
             <line x1="2" y1="50" x2="6" y2="50" stroke="#aaa" strokeWidth="2" />
           </svg>
 
-          {/* Внутренняя стрелка (указывает на цель) */}
-          <svg viewBox="0 0 24 24" style={{ position: 'absolute', top: '25%', left: '25%', width: '50%', height: '50%', transform: `rotate(${rotation}deg)`, transition: 'transform 0.1s ease', filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.25))' }}>
+          {/* Внутренняя стрелка */}
+          <svg viewBox="0 0 24 24" style={{
+            position: 'absolute', top: '25%', left: '25%', width: '50%', height: '50%',
+            transform: `rotate(${rotation}deg)`,
+            transition: 'transform 0.1s ease',
+            filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.25))'
+          }}>
             <path d="M12 2L4 20l8-4 8 4z" fill="#2196F3" />
           </svg>
         </div>

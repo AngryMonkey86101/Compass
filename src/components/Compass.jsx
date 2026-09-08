@@ -49,11 +49,15 @@ const Compass = () => {
       </select>
       <div className="compass">
         <div>{userPosition ? `Координаты: ${userPosition.latitude}, ${userPosition.longitude}` : 'Координаты: неизвестно'}</div>
-        <div className="compass-arrow" style={{ transform: `rotate(${rotationAngle}deg)`, fontSize: 80, display: 'inline-block', transition: 'transform 0.1s ease' }}>➤</div>
+        <div className="compass-arrow" style={{ transform: `rotate(${rotationAngle}deg)`, fontSize: 80, display: 'inline-block', transition: 'transform 0.1s ease' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24">
+            <path d="M12 2L2 22h20L12 2z"/>
+          </svg>
+        </div>
       </div>
       <p>Угол (alpha): {alpha}</p>
       <input type="range" min="0" max="360" value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} />
-      <label htmlFor="alphaSlider">Эмуляция поворота (для теста)</label>
+      <label htmlFor="alphaSlider">Тест вращения</label>
     </div>
   );
 };

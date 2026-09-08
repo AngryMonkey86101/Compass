@@ -99,7 +99,7 @@ export default function Compass() {
           style={{ padding: '8px', fontSize: '16px', maxWidth: '200px' }}
         >
           {savedLocations.map(l => (
-            <option key={l.id} value={l.name}>{l.name}</option>
+            <option key={l.name} value={l.name}>{l.name}</option>
           ))}
         </select>
         <button
@@ -141,7 +141,7 @@ export default function Compass() {
       {/* Скрываем компас, если нет выбранной точки */}
       {selectedLocation ? (
         <svg viewBox="0 0 24 24" width="150" height="150" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.1s ease', margin: '20px auto', display: 'block' }}>
-          <path d="M12 2L4 22h16L12 2z" fill="url(#arrowGradient)" />
+          <path d="M12 2L4 22h16L12 2z" fill="#FFFF00" />
         </svg>
       ) : (
         <p style={{ color: '#888', marginTop: '40px' }}>Добавьте точку для навигации</p>

@@ -52,6 +52,8 @@ const Compass = () => {
         <div className="compass-arrow" style={{ transform: `rotate(${rotationAngle}deg)`, fontSize: 80, display: 'inline-block', transition: 'transform 0.1s ease' }}>➤</div>
       </div>
       <p>Угол (alpha): {alpha}</p>
+      <input type="range" min="0" max="360" value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} />
+      <label htmlFor="alphaSlider">Эмуляция поворота (для теста)</label>
     </div>
   );
 };

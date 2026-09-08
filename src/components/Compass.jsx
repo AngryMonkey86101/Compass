@@ -127,6 +127,13 @@ export default function Compass() {
     width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px'
   };
 
+  const selectStyle = {
+    width: '100%', padding: '12px', margin: '8px 0', 
+    borderRadius: '10px', border: '1px solid #d1d1d6', 
+    background: '#fff', fontSize: '15px', boxSizing: 'border-box',
+    outline: 'none', fontFamily: 'inherit'
+  };
+
   return (
     <div style={{
       minHeight: '100vh', 
@@ -141,7 +148,7 @@ export default function Compass() {
     }}>
       
       {/* Выбор цели */}
-      <div style={cardStyle}>
+      <div style={{ ...cardStyle, textAlign: 'center' }}>
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор цели</p>
         <select
           value={selectedLocation ? selectedLocation.name : ''}
@@ -149,7 +156,7 @@ export default function Compass() {
             const loc = savedLocations.find(l => l.name === e.target.value);
             if (loc) setSelectedLocation(loc);
           }}
-          style={{ flex: 1, padding: '10px', fontSize: '16px', borderRadius: '10px', border: '1px solid #d1d1d6', background: '#fff', fontFamily: 'inherit' }}
+          style={{ ...selectStyle, width: '100%' }}
         >
           {savedLocations.map(l => (
             <option key={l.name} value={l.name}>{l.name}</option>
@@ -167,7 +174,7 @@ export default function Compass() {
       </div>
 
       {/* Ручное добавление точки */}
-      <div style={cardStyle}>
+      <div style={{ ...cardStyle, textAlign: 'center' }}>
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Новая точка</p>
         <input
           type="text" placeholder="Название (напр. Дом)" value={newName}
@@ -186,7 +193,7 @@ export default function Compass() {
       </div>
 
       {/* Телеметрия */}
-      <div style={cardStyle}>
+      <div style={{ ...cardStyle, textAlign: 'center' }}>
         <p style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Ваши координаты</p>
         {coords ? (
           <>

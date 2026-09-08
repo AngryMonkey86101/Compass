@@ -44,7 +44,17 @@ export default function Compass() {
 
   useEffect(() => {
     const handleOrientation = (e) => {
-      if (e.alpha !== null) setAlpha(e.alpha);
+      if (e.webkitCompassHeading !== undefined) {
+        setAlpha(e.webkitCompassHeading);
+      } else if ('DeviceOrientationEvent' in window && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(permissionState => {
+          if (permissionState === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation, true);
+          }
+        });
+      } else {
+        setAlpha(e.alpha);
+      }
     };
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     window.addEventListener('deviceorientation', handleOrientation, true);

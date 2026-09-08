@@ -75,6 +75,18 @@ export default function Compass() {
     setNewCoords('');
   };
 
+  const handleSaveCurrentLocation = () => {
+    if (!coords) return;
+    const name = window.prompt("Введите название для текущего места:", "Новая точка");
+    if (!name) return; // Если пользователь нажал Отмена
+
+    const newLoc = { name: name.trim(), lat: coords.lat, lon: coords.lon };
+    const updated = [...savedLocations, newLoc];
+    setSavedLocations(updated);
+    localStorage.setItem(compassLocations, JSON.stringify(updated));
+    setSelectedLocation(newLoc);
+  };
+
   const handleDeleteLocation = () => {
     if (!selectedLocation) return;
     const updated = savedLocations.filter(loc => loc.name !== selectedLocation.name);
@@ -83,7 +95,6 @@ export default function Compass() {
     setSelectedLocation(updated.length > 0 ? updated[0] : null);
   };
 
-  // Функция для определения цвета текста точности
   const getAccuracyColor = (acc) => {
     if (!acc) return '#888';
     if (acc <= 15) return '#4CAF50'; // Зеленый (Отлично)
@@ -120,7 +131,7 @@ export default function Compass() {
 
       {/* Добавление новой точки */}
       <div style={{ margin: '10px auto', padding: '15px', background: '#f5f5f5', borderRadius: '8px', maxWidth: '300px' }}>
-        <h4 style={{ margin: '0 0 10px 0' }}>Добавить точку</h4>
+        <h4 style={{ margin: '0 0 10px 0' }}>Добавить по координатам</h4>
         <input
           type="text"
           placeholder="Название (напр. Дом)"
@@ -143,20 +154,26 @@ export default function Compass() {
         </button>
       </div>
 
-      {/* Блок Телеметрии */}
-      <div style={{ margin: '20px auto', padding: '10px', background: '#e3f2fd', borderRadius: '8px', maxWidth: '300px', fontSize: '14px' }}>
-        <p style={{ margin: '5px 0', fontWeight: 'bold' }}>Ваша геопозиция:</p>
+      {/* Блок Телеметрии с кнопкой сохранения */}
+      <div style={{ margin: '20px auto', padding: '15px', background: '#e3f2fd', borderRadius: '8px', maxWidth: '300px', fontSize: '14px' }}>
+        <p style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>Ваши координаты:</p>
         {coords ? (
           <>
-            <p style={{ margin: '2px 0', fontFamily: 'monospace', fontSize: '15px' }}>
+            <p style={{ margin: '5px 0', fontFamily: 'monospace', fontSize: '15px' }}>
               {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
             </p>
-            <p style={{ margin: '4px 0 0 0', fontWeight: 'bold', color: getAccuracyColor(coords.accuracy) }}>
+            <p style={{ margin: '5px 0 15px 0', fontWeight: 'bold', color: getAccuracyColor(coords.accuracy) }}>
               Точность сигнала: {Math.round(coords.accuracy)} м
             </p>
+            <button
+              onClick={handleSaveCurrentLocation}
+              style={{ padding: '8px 16px', background: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              + Сохранить эту позицию
+            </button>
           </>
         ) : (
-          <p style={{ margin: '2px 0', color: '#666' }}>Поиск спутников GPS...</p>
+          <p style={{ margin: '5px 0', color: '#666' }}>Поиск спутников GPS...</p>
         )}
       </div>
 

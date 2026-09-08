@@ -85,7 +85,7 @@ export default function Compass() {
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
+    <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'sans-serif', background: 'linear-gradient(135deg, #0b1b2b, #123b47, #1f6a6f, #7ec9c3)' }}>
       <h2>Компас</h2>
 
       {/* Выбор и удаление */}

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { calculateDistance, calculateBearing } from '../utils/geoUtils';
 
+const locations = [
+  { id: 1, name: 'Default', lat: 0, lon: 0 }
+];
+
 export default function Compass() {
   const [selectedLocation, setSelectedLocation] = useState(locations[0]);
   const [coords, setCoords] = useState(null);
@@ -50,7 +54,7 @@ export default function Compass() {
         style={{ padding: '8px', fontSize: '16px', marginBottom: '20px' }}
       >
         {locations.map(l => (
-          <option key={l.name} value={l.name}>{l.name}</option>
+          <option key={l.id} value={l.name}>{l.name}</option>
         ))}
       </select>
 

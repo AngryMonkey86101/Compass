@@ -136,7 +136,7 @@ export default function Compass() {
       boxSizing: 'border-box'
     }}>
       
-      {/* Выбор и удаление точки */}
+      {/* Выбор цели */}
       <div style={cardStyle}>
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор цели</p>
         <select
@@ -151,6 +151,15 @@ export default function Compass() {
             <option key={l.name} value={l.name}>{l.name}</option>
           ))}
         </select>
+
+        {/* Кнопка удаления */}
+        <button
+          onClick={handleDeleteLocation}
+          disabled={!selectedLocation}
+          style={{ marginTop: '10px', padding: '10px 15px', background: '#FF3B30', color: 'white', border: 'none', borderRadius: '10px', cursor: selectedLocation ? 'pointer' : 'default', fontWeight: 600 }}
+        >
+          Удалить выбранную точку
+        </button>
       </div>
 
       {/* Ручное добавление точки */}
@@ -234,14 +243,6 @@ export default function Compass() {
             </svg>
           </div>
 
-          {/* Кнопка удаления */}
-          <button
-            onClick={handleDeleteLocation}
-            disabled={!selectedLocation}
-            style={{ marginTop: '10px', padding: '10px 15px', background: '#FF3B30', color: 'white', border: 'none', borderRadius: '10px', cursor: selectedLocation ? 'pointer' : 'default', fontWeight: 600 }}
-          >
-            Удалить выбранную точку
-          </button>
         </div>
       ) : (
         <p style={{ color: '#8e8e93', marginTop: '40px', fontWeight: '500' }}>Добавьте точку для навигации</p>

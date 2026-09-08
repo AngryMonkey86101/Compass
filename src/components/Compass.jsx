@@ -13,13 +13,18 @@ const Compass = () => {
       (error) => console.error('Ошибка получения геолокации:', error)
     );
 
+    window.addEventListener('deviceorientation', handleOrientation);
     window.addEventListener('deviceorientationabsolute', handleOrientation);
-    return () => window.removeEventListener('deviceorientationabsolute', handleOrientation);
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+      window.removeEventListener('deviceorientationabsolute', handleOrientation);
+    };
   }, []);
 
   const handleOrientation = (event) => {
     if (event.alpha !== null) {
       setAlpha(event.alpha);
+      console.log("Alpha:", event.alpha);
     }
   };
 
@@ -46,6 +51,7 @@ const Compass = () => {
         <div>{userPosition ? `Координаты: ${userPosition.latitude}, ${userPosition.longitude}` : 'Координаты: неизвестно'}</div>
         <div className="compass-arrow" style={{ transform: `rotate(${rotationAngle}deg)`, fontSize: 80, display: 'inline-block', transition: 'transform 0.1s ease' }}>➤</div>
       </div>
+      <p>Угол (alpha): {alpha}</p>
     </div>
   );
 };

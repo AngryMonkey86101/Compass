@@ -35,7 +35,8 @@ const Compass = () => {
     const { lat: targetLat, lon: targetLon } = selectedLocation;
 
     const bearing = calculateBearing(userLat, userLon, targetLat, targetLon);
-    return (360 - (bearing + alpha)) % 360;
+    const rotation = bearing - alpha; // Вычисление угла вращения
+    return rotation;
   };
 
   const rotationAngle = calculateArrowAngle();
@@ -50,7 +51,7 @@ const Compass = () => {
       <div className="compass">
         <div>{userPosition ? `Координаты: ${userPosition.latitude}, ${userPosition.longitude}` : 'Координаты: неизвестно'}</div>
         <svg viewBox="0 0 24 24" width="150" height="150" style={{ transform: `rotate(${rotationAngle}deg)`, transition: 'transform 0.1s ease', margin: '40px auto', display: 'block' }}>
-          <path d="M12 2L2 22h20L12 2z"/>
+          <path d="M12 2L2 22h20L12 2z" fill="green"/>
         </svg>
       </div>
       <p>Угол (alpha): {alpha}</p>

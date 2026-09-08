@@ -123,6 +123,10 @@ export default function Compass() {
     outline: 'none', fontFamily: 'inherit'
   };
 
+  const buttonStyle = {
+    width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px'
+  };
+
   return (
     <div style={{
       minHeight: '100vh', 
@@ -156,7 +160,7 @@ export default function Compass() {
         <button
           onClick={handleDeleteLocation}
           disabled={!selectedLocation}
-          style={{ marginTop: '10px', padding: '10px 15px', background: '#FF3B30', color: 'white', border: 'none', borderRadius: '10px', cursor: selectedLocation ? 'pointer' : 'default', fontWeight: 600 }}
+          style={{ ...buttonStyle, background: '#FF3B30' }}
         >
           Удалить выбранную точку
         </button>
@@ -175,7 +179,7 @@ export default function Compass() {
         />
         <button
           onClick={handleAddLocation}
-          style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px' }}
+          style={buttonStyle}
         >
           Добавить
         </button>
@@ -194,7 +198,7 @@ export default function Compass() {
             </p>
             <button
               onClick={handleSaveCurrentLocation}
-              style={{ width: '100%', padding: '12px', background: '#007AFF', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px' }}
+              style={buttonStyle}
             >
               + Сохранить текущее место
             </button>

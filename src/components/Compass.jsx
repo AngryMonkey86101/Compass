@@ -217,47 +217,26 @@ export default function Compass() {
         <p style={{ color: '#8e8e93', marginTop: '40px', fontWeight: '500' }}>Добавьте точку для навигации</p>
       )}
 
-      {/* Ручное добавление точки */}
-      <div style={{ ...cardStyle, textAlign: 'center' }}>
-        <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Новая точка</p>
-        <input
-          type="text" placeholder="Название (напр. Дом)" value={newName}
-          onChange={(e) => setNewName(e.target.value)} style={inputStyle}
-        />
-        <input
-          type="text" placeholder="Широта, Долгота" value={newCoords}
-          onChange={(e) => setNewCoords(e.target.value)} style={inputStyle}
-        />
-        <button
-          onClick={handleAddLocation}
-          style={buttonStyle}
-        >
-          Добавить
-        </button>
-      </div>
-
       {/* Телеметрия */}
-      <div style={{ ...cardStyle, textAlign: 'center' }}>
-        <p style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Ваши координаты</p>
-        {coords ? (
-          <>
-            <p style={{ margin: '5px 0', fontFamily: 'SFMono-Regular, Consolas, monospace', fontSize: '16px', color: '#1c1c1e' }}>
-              {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
-            </p>
-            <p style={{ margin: '5px 0 15px 0', fontWeight: 600, color: getAccuracyColor(coords.accuracy), fontSize: '14px' }}>
-              Точность: {Math.round(coords.accuracy)} м
-            </p>
-            <button
-              onClick={handleSaveCurrentLocation}
-              style={buttonStyle}
-            >
-              + Сохранить текущее место
-            </button>
-          </>
-        ) : (
-          <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500' }}>Поиск спутников GPS...</p>
-        )}
-      </div>
+      {coords ? (
+        <>
+          <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500' }}>Ваши координаты</p>
+          <p style={{ margin: '5px 0', fontFamily: 'SFMono-Regular, Consolas, monospace', fontSize: '16px', color: '#1c1c1e' }}>
+            {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
+          </p>
+          <p style={{ margin: '5px 0 15px 0', fontWeight: 600, color: getAccuracyColor(coords.accuracy), fontSize: '14px' }}>
+            Точность: {Math.round(coords.accuracy)} м
+          </p>
+          <button
+            onClick={handleSaveCurrentLocation}
+            style={buttonStyle}
+          >
+            + Сохранить текущее место
+          </button>
+        </>
+      ) : (
+        <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500' }}>Поиск спутников GPS...</p>
+      )}
 
     </div>
   );

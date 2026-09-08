@@ -147,9 +147,9 @@ export default function Compass() {
       boxSizing: 'border-box'
     }}>
       
-      {/* Выбор цели */}
+      {/* Выбор точки */}
       <div style={{ ...cardStyle, textAlign: 'center' }}>
-        <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор цели</p>
+        <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор точки</p>
         <select
           value={selectedLocation ? selectedLocation.name : ''}
           onChange={(e) => {
@@ -244,14 +244,14 @@ export default function Compass() {
             </svg>
 
             {/* Внутренняя стрелка */}
-            <svg viewBox="0 0 24 24" style={{
-              position: 'absolute', top: '22%', left: '22%', width: '56%', height: '56%',
-              transform: `rotate(${rotation}deg)`,
-              transition: 'transform 0.1s ease',
-              filter: 'drop-shadow(0px 6px 8px rgba(0,122,255,0.3))'
-            }}>
-              <path d="M12 2L3 20l9-5 9 5z" fill="#007AFF" />
-            </svg>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: `translate(-50%, -50%) rotate(${rotation}deg)` }}>
+              <svg viewBox="0 0 24 24" style={{
+                width: '36px', height: '36px',
+                filter: 'drop-shadow(0px 6px 8px rgba(0,122,255,0.3))'
+              }}>
+                <path d="M12 2L3 20l9-5 9 5z" fill="#007AFF" />
+              </svg>
+            </div>
           </div>
 
         </div>

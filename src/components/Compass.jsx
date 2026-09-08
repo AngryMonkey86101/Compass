@@ -51,7 +51,7 @@ const Compass = () => {
       <div className="compass">
         <div>{userPosition ? `Координаты: ${userPosition.latitude}, ${userPosition.longitude}` : 'Координаты: неизвестно'}</div>
         <svg viewBox="0 0 24 24" width="150" height="150" style={{ transform: `rotate(${rotationAngle}deg)`, transition: 'transform 0.1s ease', margin: '40px auto', display: 'block' }}>
-          <path d="M12 2L2 22h20L12 2z" fill="green"/>
+          <path d="M12 2L4 22h16L12 2z" fill="green"/>
         </svg>
       </div>
       <p>Угол (alpha): {alpha}</p>

@@ -246,7 +246,7 @@ export default function Compass() {
             {/* Внутренняя стрелка */}
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: `translate(-50%, -50%) rotate(${rotation}deg)` }}>
               <svg viewBox="0 0 24 24" style={{
-                width: '48px', height: '48px',
+                width: '150px', height: '150px',
                 filter: 'drop-shadow(0px 6px 8px rgba(0,122,255,0.3))'
               }}>
                 <path d="M12 2L3 20l9-5 9 5z" fill="#007AFF" />

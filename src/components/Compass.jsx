@@ -139,27 +139,18 @@ export default function Compass() {
       {/* Выбор и удаление точки */}
       <div style={cardStyle}>
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор цели</p>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <select
-            value={selectedLocation ? selectedLocation.name : ''}
-            onChange={(e) => {
-              const loc = savedLocations.find(l => l.name === e.target.value);
-              if (loc) setSelectedLocation(loc);
-            }}
-            style={{ flex: 1, padding: '10px', fontSize: '16px', borderRadius: '10px', border: '1px solid #d1d1d6', background: '#fff', fontFamily: 'inherit' }}
-          >
-            {savedLocations.map(l => (
-              <option key={l.name} value={l.name}>{l.name}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleDeleteLocation}
-            disabled={!selectedLocation}
-            style={{ padding: '10px 15px', background: '#FF3B30', color: 'white', border: 'none', borderRadius: '10px', cursor: selectedLocation ? 'pointer' : 'default', fontWeight: 600 }}
-          >
-            Удалить
-          </button>
-        </div>
+        <select
+          value={selectedLocation ? selectedLocation.name : ''}
+          onChange={(e) => {
+            const loc = savedLocations.find(l => l.name === e.target.value);
+            if (loc) setSelectedLocation(loc);
+          }}
+          style={{ flex: 1, padding: '10px', fontSize: '16px', borderRadius: '10px', border: '1px solid #d1d1d6', background: '#fff', fontFamily: 'inherit' }}
+        >
+          {savedLocations.map(l => (
+            <option key={l.name} value={l.name}>{l.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* Ручное добавление точки */}
@@ -242,6 +233,15 @@ export default function Compass() {
               <path d="M12 2L3 20l9-5 9 5z" fill="#007AFF" />
             </svg>
           </div>
+
+          {/* Кнопка удаления */}
+          <button
+            onClick={handleDeleteLocation}
+            disabled={!selectedLocation}
+            style={{ marginTop: '10px', padding: '10px 15px', background: '#FF3B30', color: 'white', border: 'none', borderRadius: '10px', cursor: selectedLocation ? 'pointer' : 'default', fontWeight: 600 }}
+          >
+            Удалить выбранную точку
+          </button>
         </div>
       ) : (
         <p style={{ color: '#8e8e93', marginTop: '40px', fontWeight: '500' }}>Добавьте точку для навигации</p>

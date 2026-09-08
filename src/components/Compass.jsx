@@ -2,7 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { calculateDistance, calculateBearing } from '../utils/geoUtils';
 
 const locations = [
-  { id: 1, name: 'Default', lat: 0, lon: 0 }
+  {
+    "name": "Северный полюс",
+    "lat": 90.0,
+    "lon": 0.0
+  },
+  {
+    "name": "Москва (Красная площадь)",
+    "lat": 55.7535,
+    "lon": 37.6210
+  },
+  {
+    "name": "Париж (Эйфелева башня)",
+    "lat": 48.8584,
+    "lon": 2.2945
+  },
+  {
+    "name": "Токио (Сибуя)",
+    "lat": 35.6595,
+    "lon": 139.7005
+  },
+  {
+    "name": "Нью-Йорк (Таймс-сквер)",
+    "lat": 40.7580,
+    "lon": -73.9855
+  }
 ];
 
 export default function Compass() {

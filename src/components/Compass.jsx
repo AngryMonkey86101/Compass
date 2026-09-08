@@ -78,7 +78,7 @@ export default function Compass() {
   const handleSaveCurrentLocation = () => {
     if (!coords) return;
     const name = window.prompt("Введите название для текущего места:", "Новая точка");
-    if (!name) return; // Если пользователь нажал Отмена
+    if (!name) return;
 
     const newLoc = { name: name.trim(), lat: coords.lat, lon: coords.lon };
     const updated = [...savedLocations, newLoc];
@@ -96,121 +96,155 @@ export default function Compass() {
   };
 
   const getAccuracyColor = (acc) => {
-    if (!acc) return '#888';
-    if (acc <= 15) return '#4CAF50'; // Зеленый (Отлично)
-    if (acc <= 50) return '#FF9800'; // Оранжевый (Нормально)
-    return '#F44336'; // Красный (Плохо)
+    if (!acc) return '#8e8e93';
+    if (acc <= 15) return '#34C759'; 
+    if (acc <= 50) return '#FF9500'; 
+    return '#FF3B30'; 
+  };
+
+  // Общие стили для карточек интерфейса
+  const cardStyle = {
+    background: 'rgba(255, 255, 255, 0.85)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    borderRadius: '16px',
+    padding: '20px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
+    width: '100%',
+    maxWidth: '340px',
+    marginBottom: '20px',
+    boxSizing: 'border-box'
+  };
+
+  const inputStyle = {
+    width: '100%', padding: '12px', margin: '8px 0', 
+    borderRadius: '10px', border: '1px solid #d1d1d6', 
+    background: '#f2f2f7', fontSize: '15px', boxSizing: 'border-box',
+    outline: 'none', fontFamily: 'inherit'
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
-      <h2>Компас</h2>
-
-      {/* Выбор и удаление */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <select
-          value={selectedLocation ? selectedLocation.name : ''}
-          onChange={(e) => {
-            const loc = savedLocations.find(l => l.name === e.target.value);
-            if (loc) setSelectedLocation(loc);
-          }}
-          style={{ padding: '8px', fontSize: '16px', maxWidth: '200px' }}
-        >
-          {savedLocations.map(l => (
-            <option key={l.name} value={l.name}>{l.name}</option>
-          ))}
-        </select>
-        <button
-          onClick={handleDeleteLocation}
-          disabled={!selectedLocation}
-          style={{ padding: '8px 12px', background: '#ff4444', color: 'white', border: 'none', borderRadius: '4px', cursor: selectedLocation ? 'pointer' : 'default' }}
-        >
-          Удалить
-        </button>
+    <div style={{
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)', 
+      padding: '30px 15px', 
+      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', 
+      color: '#1c1c1e',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      boxSizing: 'border-box'
+    }}>
+      
+      {/* Выбор и удаление точки */}
+      <div style={cardStyle}>
+        <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор цели</p>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <select
+            value={selectedLocation ? selectedLocation.name : ''}
+            onChange={(e) => {
+              const loc = savedLocations.find(l => l.name === e.target.value);
+              if (loc) setSelectedLocation(loc);
+            }}
+            style={{ flex: 1, padding: '10px', fontSize: '16px', borderRadius: '10px', border: '1px solid #d1d1d6', background: '#fff', fontFamily: 'inherit' }}
+          >
+            {savedLocations.map(l => (
+              <option key={l.name} value={l.name}>{l.name}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleDeleteLocation}
+            disabled={!selectedLocation}
+            style={{ padding: '10px 15px', background: '#FF3B30', color: 'white', border: 'none', borderRadius: '10px', cursor: selectedLocation ? 'pointer' : 'default', fontWeight: 600 }}
+          >
+            Удалить
+          </button>
+        </div>
       </div>
 
-      {/* Добавление новой точки */}
-      <div style={{ margin: '10px auto', padding: '15px', background: '#f5f5f5', borderRadius: '8px', maxWidth: '300px' }}>
-        <h4 style={{ margin: '0 0 10px 0' }}>Добавить по координатам</h4>
+      {/* Ручное добавление точки */}
+      <div style={cardStyle}>
+        <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Новая точка</p>
         <input
-          type="text"
-          placeholder="Название (напр. Дом)"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          style={{ display: 'block', margin: '5px auto', padding: '8px', width: '90%', boxSizing: 'border-box' }}
+          type="text" placeholder="Название (напр. Дом)" value={newName}
+          onChange={(e) => setNewName(e.target.value)} style={inputStyle}
         />
         <input
-          type="text"
-          placeholder="Широта, Долгота"
-          value={newCoords}
-          onChange={(e) => setNewCoords(e.target.value)}
-          style={{ display: 'block', margin: '5px auto', padding: '8px', width: '90%', boxSizing: 'border-box' }}
+          type="text" placeholder="Широта, Долгота" value={newCoords}
+          onChange={(e) => setNewCoords(e.target.value)} style={inputStyle}
         />
         <button
           onClick={handleAddLocation}
-          style={{ marginTop: '10px', padding: '8px 16px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px' }}
         >
           Добавить
         </button>
       </div>
 
-      {/* Блок Телеметрии с кнопкой сохранения */}
-      <div style={{ margin: '20px auto', padding: '15px', background: '#e3f2fd', borderRadius: '8px', maxWidth: '300px', fontSize: '14px' }}>
-        <p style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>Ваши координаты:</p>
+      {/* Телеметрия */}
+      <div style={cardStyle}>
+        <p style={{ margin: '0 0 5px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Ваши координаты</p>
         {coords ? (
           <>
-            <p style={{ margin: '5px 0', fontFamily: 'monospace', fontSize: '15px' }}>
+            <p style={{ margin: '5px 0', fontFamily: 'SFMono-Regular, Consolas, monospace', fontSize: '16px', color: '#1c1c1e' }}>
               {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
             </p>
-            <p style={{ margin: '5px 0 15px 0', fontWeight: 'bold', color: getAccuracyColor(coords.accuracy) }}>
-              Точность сигнала: {Math.round(coords.accuracy)} м
+            <p style={{ margin: '5px 0 15px 0', fontWeight: 600, color: getAccuracyColor(coords.accuracy), fontSize: '14px' }}>
+              Точность: {Math.round(coords.accuracy)} м
             </p>
             <button
               onClick={handleSaveCurrentLocation}
-              style={{ padding: '8px 16px', background: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={{ width: '100%', padding: '12px', background: '#007AFF', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px' }}
             >
-              + Сохранить эту позицию
+              + Сохранить текущее место
             </button>
           </>
         ) : (
-          <p style={{ margin: '5px 0', color: '#666' }}>Поиск спутников GPS...</p>
+          <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500' }}>Поиск спутников GPS...</p>
         )}
       </div>
 
-      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '20px 0' }}>Расстояние до цели: {distance}</p>
-
+      {/* Блок Компаса */}
       {selectedLocation ? (
-        <div style={{ position: 'relative', width: '240px', height: '240px', margin: '0 auto' }}>
-          {/* Внешний циферблат */}
-          <svg viewBox="0 0 100 100" style={{
-            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-            transform: `rotate(-${alpha}deg)`,
-            transition: 'transform 0.1s ease'
-          }}>
-            <circle cx="50" cy="50" r="48" fill="#fafafa" stroke="#ddd" strokeWidth="2" />
-            <circle cx="50" cy="50" r="35" fill="none" stroke="#eee" strokeWidth="1" />
-            <text x="50" y="15" textAnchor="middle" fill="#ff4444" fontSize="12" fontWeight="bold">N</text>
-            <text x="88" y="54" textAnchor="middle" fill="#888" fontSize="10" fontWeight="bold">E</text>
-            <text x="50" y="92" textAnchor="middle" fill="#888" fontSize="10" fontWeight="bold">S</text>
-            <text x="12" y="54" textAnchor="middle" fill="#888" fontSize="10" fontWeight="bold">W</text>
-            <line x1="50" y1="2" x2="50" y2="6" stroke="#ff4444" strokeWidth="2" />
-            <line x1="98" y1="50" x2="94" y2="50" stroke="#aaa" strokeWidth="2" />
-            <line x1="50" y1="98" x2="50" y2="94" stroke="#aaa" strokeWidth="2" />
-            <line x1="2" y1="50" x2="6" y2="50" stroke="#aaa" strokeWidth="2" />
-          </svg>
+        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <p style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 25px 0', color: '#1c1c1e', background: 'rgba(255,255,255,0.7)', padding: '10px 20px', borderRadius: '20px' }}>
+            Дистанция: {distance}
+          </p>
+          
+          <div style={{ position: 'relative', width: '260px', height: '260px', margin: '0 auto', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))' }}>
+            {/* Внешний циферблат */}
+            <svg viewBox="0 0 100 100" style={{
+              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+              transform: `rotate(-${alpha}deg)`,
+              transition: 'transform 0.1s ease'
+            }}>
+              <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e5e5ea" strokeWidth="2" />
+              <circle cx="50" cy="50" r="35" fill="none" stroke="#f2f2f7" strokeWidth="1" />
+              
+              <text x="50" y="16" textAnchor="middle" fill="#FF3B30" fontSize="12" fontWeight="bold">N</text>
+              <text x="88" y="54" textAnchor="middle" fill="#8e8e93" fontSize="10" fontWeight="bold">E</text>
+              <text x="50" y="91" textAnchor="middle" fill="#8e8e93" fontSize="10" fontWeight="bold">S</text>
+              <text x="12" y="54" textAnchor="middle" fill="#8e8e93" fontSize="10" fontWeight="bold">W</text>
+              
+              <line x1="50" y1="2" x2="50" y2="7" stroke="#FF3B30" strokeWidth="2.5" strokeLinecap="round" />
+              <line x1="98" y1="50" x2="93" y2="50" stroke="#c7c7cc" strokeWidth="2" strokeLinecap="round" />
+              <line x1="50" y1="98" x2="50" y2="93" stroke="#c7c7cc" strokeWidth="2" strokeLinecap="round" />
+              <line x1="2" y1="50" x2="7" y2="50" stroke="#c7c7cc" strokeWidth="2" strokeLinecap="round" />
+            </svg>
 
-          {/* Внутренняя стрелка */}
-          <svg viewBox="0 0 24 24" style={{
-            position: 'absolute', top: '25%', left: '25%', width: '50%', height: '50%',
-            transform: `rotate(${rotation}deg)`,
-            transition: 'transform 0.1s ease',
-            filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.25))'
-          }}>
-            <path d="M12 2L4 20l8-4 8 4z" fill="#2196F3" />
-          </svg>
+            {/* Внутренняя стрелка */}
+            <svg viewBox="0 0 24 24" style={{
+              position: 'absolute', top: '22%', left: '22%', width: '56%', height: '56%',
+              transform: `rotate(${rotation}deg)`,
+              transition: 'transform 0.1s ease',
+              filter: 'drop-shadow(0px 6px 8px rgba(0,122,255,0.3))'
+            }}>
+              <path d="M12 2L3 20l9-5 9 5z" fill="#007AFF" />
+            </svg>
+          </div>
         </div>
       ) : (
-        <p style={{ color: '#888', marginTop: '40px' }}>Добавьте точку для навигации</p>
+        <p style={{ color: '#8e8e93', marginTop: '40px', fontWeight: '500' }}>Добавьте точку для навигации</p>
       )}
     </div>
   );

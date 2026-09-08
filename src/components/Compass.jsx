@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import calculateDistance from '../utils/geoUtils';
-import calculateBearing from '../utils/geoUtils';
+import { calculateDistance, calculateBearing } from '../utils/geoUtils';
 
 export default function Compass() {
   const [selectedLocation, setSelectedLocation] = useState(locations[0]);

@@ -27,7 +27,6 @@ export default function Compass() {
   const [newName, setNewName] = useState('');
   const [newCoords, setNewCoords] = useState('');
 
-  // Геолокация
   useEffect(() => {
     if ('geolocation' in navigator) {
       const watchId = navigator.geolocation.watchPosition(
@@ -39,7 +38,6 @@ export default function Compass() {
     }
   }, []);
 
-  // Сенсоры компаса
   useEffect(() => {
     const handleOrientation = (e) => {
       if (e.alpha !== null) setAlpha(e.alpha);
@@ -52,12 +50,10 @@ export default function Compass() {
     };
   }, []);
 
-  // Безопасные вычисления
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
   const rotation = (Number(bearing) - Number(alpha)) % 360;
   const distance = coords && selectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
 
-  // Добавление точки
   const handleAddLocation = () => {
     if (!newName || !newCoords) return;
     const parts = newCoords.split(',');
@@ -75,7 +71,6 @@ export default function Compass() {
     setNewCoords('');
   };
 
-  // Удаление точки
   const handleDeleteLocation = () => {
     if (!selectedLocation) return;
     const updated = savedLocations.filter(loc => loc.name !== selectedLocation.name);
@@ -85,7 +80,7 @@ export default function Compass() {
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'sans-serif', background: 'linear-gradient(135deg, #0b1b2b, #123b47, #1f6a6f, #7ec9c3)' }}>
+    <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
       <h2>Компас</h2>
 
       {/* Выбор и удаление */}
@@ -136,35 +131,32 @@ export default function Compass() {
         </button>
       </div>
 
-      <p style={{ fontSize: '18px', fontWeight: 'bold' }}>Расстояние: {distance}</p>
+      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: '20px 0' }}>Расстояние: {distance}</p>
 
-      {/* Скрываем компас, если нет выбранной точки */}
       {selectedLocation ? (
-        <svg viewBox="0 0 24 24" width="150" height="150" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.1s ease', margin: '20px auto', display: 'block' }}>
-          <path d="M12 2L4 22h16L12 2z" fill="#FFFF00" />
-        </svg>
+        <div style={{ position: 'relative', width: '240px', height: '240px', margin: '0 auto' }}>
+          {/* Внешний циферблат (указывает на Север) */}
+          <svg viewBox="0 0 100 100" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', transform: `rotate(-${alpha}deg)`, transition: 'transform 0.1s ease' }}>
+            <circle cx="50" cy="50" r="48" fill="#fafafa" stroke="#ddd" strokeWidth="2" />
+            <circle cx="50" cy="50" r="35" fill="none" stroke="#eee" strokeWidth="1" />
+            <text x="50" y="15" textAnchor="middle" fill="#ff4444" fontSize="12" fontWeight="bold">N</text>
+            <text x="88" y="54" textAnchor="middle" fill="#888" fontSize="10" fontWeight="bold">E</text>
+            <text x="50" y="92" textAnchor="middle" fill="#888" fontSize="10" fontWeight="bold">S</text>
+            <text x="12" y="54" textAnchor="middle" fill="#888" fontSize="10" fontWeight="bold">W</text>
+            <line x1="50" y1="2" x2="50" y2="6" stroke="#ff4444" strokeWidth="2" />
+            <line x1="98" y1="50" x2="94" y2="50" stroke="#aaa" strokeWidth="2" />
+            <line x1="50" y1="98" x2="50" y2="94" stroke="#aaa" strokeWidth="2" />
+            <line x1="2" y1="50" x2="6" y2="50" stroke="#aaa" strokeWidth="2" />
+          </svg>
+
+          {/* Внутренняя стрелка (указывает на цель) */}
+          <svg viewBox="0 0 24 24" style={{ position: 'absolute', top: '25%', left: '25%', width: '50%', height: '50%', transform: `rotate(${rotation}deg)`, transition: 'transform 0.1s ease', filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.25))' }}>
+            <path d="M12 2L4 20l8-4 8 4z" fill="#2196F3" />
+          </svg>
+        </div>
       ) : (
         <p style={{ color: '#888', marginTop: '40px' }}>Добавьте точку для навигации</p>
       )}
-
-      {/* Оборачиваем defs в svg */}
-      <svg xmlns="http://www.w3.org/2000/svg" style={{ display: 'none' }}>
-        <defs>
-          <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style={{ stopColor: '#FFFF00', stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
-          </linearGradient>
-        </defs>
-      </svg>
-
-      {/* Добавляем ромб вверху стрелки */}
-      {selectedLocation ? (
-        <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)' }}>
-          <svg viewBox="0 0 100 100" width="30" height="30" fill="#FFFF00">
-            <polygon points="50,0 75,25 50,50 25,25" />
-          </svg>
-        </div>
-      ) : null}
     </div>
   );
 }

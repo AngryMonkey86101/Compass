@@ -141,11 +141,18 @@ export default function Compass() {
       {/* Скрываем компас, если нет выбранной точки */}
       {selectedLocation ? (
         <svg viewBox="0 0 24 24" width="150" height="150" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.1s ease', margin: '20px auto', display: 'block' }}>
-          <path d="M12 2L4 22h16L12 2z" fill="#ff4444" />
+          <path d="M12 2L4 22h16L12 2z" fill="url(#arrowGradient)" />
         </svg>
       ) : (
         <p style={{ color: '#888', marginTop: '40px' }}>Добавьте точку для навигации</p>
       )}
     </div>
+
+    <defs>
+      <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color: #FFFF00; stop-opacity: 1" />
+        <stop offset="100%" style="stop-color: #FFD700; stop-opacity: 1" />
+      </linearGradient>
+    </defs>
   );
 }

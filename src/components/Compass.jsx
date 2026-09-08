@@ -146,13 +146,16 @@ export default function Compass() {
       ) : (
         <p style={{ color: '#888', marginTop: '40px' }}>Добавьте точку для навигации</p>
       )}
-    </div>
 
-    <defs>
-      <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" style="stop-color: #FFFF00; stop-opacity: 1" />
-        <stop offset="100%" style="stop-color: #FFD700; stop-opacity: 1" />
-      </linearGradient>
-    </defs>
+      {/* Оборачиваем defs в svg */}
+      <svg xmlns="http://www.w3.org/2000/svg" style={{ display: 'none' }}>
+        <defs>
+          <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color: #FFFF00; stop-opacity: 1" />
+            <stop offset="100%" style="stop-color: #FFD700; stop-opacity: 1" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
   );
 }

@@ -156,6 +156,15 @@ export default function Compass() {
           </linearGradient>
         </defs>
       </svg>
+
+      {/* Добавляем ромб вверху стрелки */}
+      {selectedLocation ? (
+        <div style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)' }}>
+          <svg viewBox="0 0 100 100" width="30" height="30" fill="#FFFF00">
+            <polygon points="50,0 75,25 50,50 25,25" />
+          </svg>
+        </div>
+      ) : null}
     </div>
   );
 }

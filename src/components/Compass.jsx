@@ -44,7 +44,7 @@ const Compass = () => {
       </select>
       <div className="compass">
         <div>{userPosition ? `Координаты: ${userPosition.latitude}, ${userPosition.longitude}` : 'Координаты: неизвестно'}</div>
-        <div className="compass-arrow" style={{ transform: `rotate(${rotationAngle}deg)` }}></div>
+        <div className="compass-arrow" style={{ transform: `rotate(${rotationAngle}deg)`, fontSize: 80, display: 'inline-block', transition: 'transform 0.1s ease' }}>➤</div>
       </div>
     </div>
   );

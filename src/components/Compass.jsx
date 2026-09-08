@@ -22,7 +22,6 @@ export default function Compass() {
     }
   }, []);
 
-  /*
   // Временно отключаем сенсоры, чтобы браузер не сбрасывал угол на ноль
   useEffect(() => {
     const handleOrientation = (e) => {
@@ -35,7 +34,6 @@ export default function Compass() {
       window.removeEventListener('deviceorientation', handleOrientation, true);
     };
   }, []);
-  */
 
   const bearing = coords ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
   // Безопасное вычисление угла поворота

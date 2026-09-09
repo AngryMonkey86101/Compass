@@ -44,21 +44,22 @@ export default function Compass() {
   }, []);
 
   useEffect(() => {
-    const handleOrientation = (e) => {
-      let heading;
-      if ('DeviceOrientationEvent' in window && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        if (!isPermissionGranted) return;
+    const handleOrientation = (event) => {
+      if (!event) return;
+
+      let newHeading = 0;
+
+      // Для iOS
+      if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
+        newHeading = event.webkitCompassHeading;
       }
 
-      if (e.webkitCompassHeading !== undefined) {
-        heading = e.webkitCompassHeading;
-      } else if (e.alpha !== undefined) {
-        heading = 360 - e.alpha;
+      // Для Android (инвертируем alpha, так как он идет против часовой стрелки)
+      else if (event.alpha !== undefined && event.alpha !== null) {
+        newHeading = 360 - event.alpha;
       }
 
-      if (heading !== null && heading !== undefined) {
-        setAlpha(heading);
-      }
+      setAlpha(newHeading);
     };
 
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
@@ -68,7 +69,7 @@ export default function Compass() {
       window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
       window.removeEventListener('deviceorientation', handleOrientation, true);
     };
-  }, [isPermissionGranted]);
+  }, []);
 
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
   const rotation = (Number(bearing) - Number(alpha)) % 360;
@@ -304,7 +305,7 @@ export default function Compass() {
 
       {/* Отладочная строка */}
       <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500', fontSize: '14px' }}>
-        Отладка: {alpha !== null ? Math.round(alpha) + '°' : 'Ожидание датчиков...'}
+        Отладка: alpha = {alpha !== null ? Math.round(alpha) + '°' : 'Ожидание датчиков...'}
       </p>
     </div>
   );

@@ -174,6 +174,16 @@ export default function Compass() {
       boxSizing: 'border-box'
     }}>
       
+      {/* Кнопка включения датчиков */}
+      {!isPermissionGranted && (
+        <button
+          onClick={enableSensors}
+          style={{ ...buttonStyle, marginTop: '20px', fontSize: '18px' }}
+        >
+          Включить компас
+        </button>
+      )}
+
       {/* Выбор точки */}
       <div style={{ ...cardStyle, textAlign: 'center' }}>
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор точки</p>
@@ -270,7 +280,7 @@ export default function Compass() {
           <p style={{ margin: '5px 0', fontFamily: 'SFMono-Regular, Consolas, monospace', fontSize: '16px', color: '#1c1c1e' }}>
             {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
           </p>
-          <p style={{ margin: '5px 0 15px 0', fontWeight: 600, color: getAccuracyColor(coords.accuracy), fontSize: '14px' }}>
+          <p style={{ margin: '5px 0 15px 0', fontWeight: '600', color: getAccuracyColor(coords.accuracy), fontSize: '14px' }}>
             Точность: {Math.round(coords.accuracy)} м
           </p>
           <button
@@ -284,25 +294,6 @@ export default function Compass() {
         <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500' }}>Поиск спутников GPS...</p>
       )}
 
-      {/* Кнопка включения датчиков */}
-      {!isPermissionGranted && (
-        <button
-          onClick={enableSensors}
-          style={{ ...buttonStyle, marginTop: '20px', fontSize: '18px' }}
-        >
-          Включить компас
-        </button>
-      )}
-
-      {/* Отладочная строка */}
-      <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500', fontSize: '14px' }}>
-        Отладка: alpha = {alpha !== null ? Math.round(alpha) + '°' : 'Ожидание датчиков...'}
-      </p>
-
-      {/* Отладочная информация */}
-      <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500', fontSize: '12px' }}>
-        {debugInfo}
-      </p>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export default function Compass() {
   const [selectedLocation, setSelectedLocation] = useState(savedLocations.length > 0 ? savedLocations[0] : null);
   const [coords, setCoords] = useState(null);
   const [alpha, setAlpha] = useState(0);
+  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
 
   // Поля для новой точки
   const [newName, setNewName] = useState('');
@@ -44,25 +45,30 @@ export default function Compass() {
 
   useEffect(() => {
     const handleOrientation = (e) => {
+      let heading;
+      if ('DeviceOrientationEvent' in window && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        if (!isPermissionGranted) return;
+      }
+
       if (e.webkitCompassHeading !== undefined) {
-        setAlpha(e.webkitCompassHeading);
-      } else if ('DeviceOrientationEvent' in window && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(permissionState => {
-          if (permissionState === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
-          }
-        });
-      } else {
-        setAlpha(e.alpha);
+        heading = e.webkitCompassHeading;
+      } else if (e.alpha !== undefined) {
+        heading = 360 - e.alpha;
+      }
+
+      if (heading !== null && heading !== undefined) {
+        setAlpha(heading);
       }
     };
+
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     window.addEventListener('deviceorientation', handleOrientation, true);
+
     return () => {
       window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
       window.removeEventListener('deviceorientation', handleOrientation, true);
     };
-  }, []);
+  }, [isPermissionGranted]);
 
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
   const rotation = (Number(bearing) - Number(alpha)) % 360;
@@ -142,6 +148,18 @@ export default function Compass() {
     borderRadius: '10px', border: '1px solid #d1d1d6', 
     background: '#fff', fontSize: '15px', boxSizing: 'border-box',
     outline: 'none', fontFamily: 'inherit'
+  };
+
+  const enableSensors = () => {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then(permissionState => {
+        if (permissionState === 'granted') {
+          setIsPermissionGranted(true);
+        }
+      });
+    } else {
+      setIsPermissionGranted(true);
+    }
   };
 
   return (
@@ -267,6 +285,20 @@ export default function Compass() {
         <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500' }}>Поиск спутников GPS...</p>
       )}
 
+      {/* Кнопка включения датчиков */}
+      {!isPermissionGranted && (
+        <button
+          onClick={enableSensors}
+          style={{ ...buttonStyle, marginTop: '20px', fontSize: '18px' }}
+        >
+          Включить компас
+        </button>
+      )}
+
+      {/* Отладочная строка */}
+      <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500', fontSize: '14px' }}>
+        Отладка: {alpha !== null ? Math.round(alpha) + '°' : 'Ожидание датчиков...'}
+      </p>
     </div>
   );
 }

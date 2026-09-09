@@ -32,9 +32,12 @@ export default function Compass() {
   // Объявление функции handleOrientation прямо внутри компонента
   const handleOrientation = (event) => {
     if (!event) return;
-    const newHeading = event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null
+    let newHeading = event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null
       ? event.webkitCompassHeading
       : (event.alpha !== undefined && event.alpha !== null ? 360 - event.alpha : 0);
+
+    // Коррекция направления для совместимости с Android
+    if (newHeading < 0) newHeading += 360;
 
     setAlpha(newHeading);
     setDebugInfo(`type: ${event.type} alpha: ${event.alpha ? Math.round(event.alpha) : null}`);

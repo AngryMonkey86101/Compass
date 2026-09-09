@@ -153,7 +153,11 @@ export default function Compass() {
       DeviceOrientationEvent.requestPermission().then(permissionState => {
         if (permissionState === 'granted') {
           setIsPermissionGranted(true);
+        } else {
+          setDebugInfo('Разрешение на использование датчиков отклонено');
         }
+      }).catch(error => {
+        setDebugInfo(`Ошибка при запросе разрешений: ${error.message}`);
       });
     } else {
       setIsPermissionGranted(true);

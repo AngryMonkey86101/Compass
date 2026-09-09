@@ -29,6 +29,17 @@ export default function Compass() {
   const [newName, setNewName] = useState('');
   const [newCoords, setNewCoords] = useState('');
 
+  // Объявление функции handleOrientation прямо внутри компонента
+  const handleOrientation = (event) => {
+    if (!event) return;
+    const newHeading = event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null
+      ? event.webkitCompassHeading
+      : (event.alpha !== undefined && event.alpha !== null ? 360 - event.alpha : 0);
+
+    setAlpha(newHeading);
+    setDebugInfo(`type: ${event.type} alpha: ${event.alpha ? Math.round(event.alpha) : null}`);
+  };
+
   useEffect(() => {
     if ('geolocation' in navigator) {
       const watchId = navigator.geolocation.watchPosition(
@@ -45,31 +56,6 @@ export default function Compass() {
   }, []);
 
   useEffect(() => {
-    const handleOrientation = (event) => {
-      if (!event) return;
-
-      // Защита от пустых стартовых событий
-      if (event.alpha === null && event.beta === null && event.gamma === null) return;
-
-      let newHeading = 0;
-
-      // Для iOS
-      if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
-        newHeading = event.webkitCompassHeading;
-      }
-
-      // Для Android (инвертируем alpha, так как он идет против часовой стрелки)
-      else if (event.alpha !== undefined && event.alpha !== null) {
-        newHeading = 360 - event.alpha;
-      }
-
-      setAlpha(newHeading);
-
-      // Сохранение сырых данных в отладочную информацию
-      const debugData = `type: ${event.type} alpha: ${event.alpha ? Math.round(event.alpha) : null}`;
-      setDebugInfo(debugData);
-    };
-
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     window.addEventListener('deviceorientation', handleOrientation, true);
 

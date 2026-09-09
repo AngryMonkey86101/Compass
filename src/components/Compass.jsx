@@ -48,6 +48,9 @@ export default function Compass() {
     const handleOrientation = (event) => {
       if (!event) return;
 
+      // Защита от пустых стартовых событий
+      if (event.alpha === null && event.beta === null && event.gamma === null) return;
+
       let newHeading = 0;
 
       // Для iOS
@@ -63,7 +66,7 @@ export default function Compass() {
       setAlpha(newHeading);
 
       // Сохранение сырых данных в отладочную информацию
-      const debugData = `type: ${event.type} alpha: ${event.alpha} beta: ${event.beta} gamma: ${event.gamma} absolute: ${event.absolute}`;
+      const debugData = `type: ${event.type} alpha: ${event.alpha ? Math.round(event.alpha) : null}`;
       setDebugInfo(debugData);
     };
 
@@ -168,11 +171,8 @@ export default function Compass() {
     }
 
     // Проверка поддержки deviceorientationabsolute
-    if ('ondeviceorientationabsolute' in window) {
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    } else {
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    }
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, true);
   };
 
   return (

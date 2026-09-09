@@ -39,7 +39,7 @@ export default function Compass() {
     // Коррекция направления для совместимости с Android
     if (newHeading < 0) newHeading += 360;
 
-    setAlpha(newHeading);
+    setAlpha(Math.round(newHeading * 10) / 10); // Округление до одного знака после запятой
     setDebugInfo(`type: ${event.type} alpha: ${event.alpha ? Math.round(event.alpha) : null}`);
   };
 

@@ -126,7 +126,7 @@ export default function Compass() {
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
     width: '100%',
     maxWidth: '340px',
-    marginBottom: '20px',
+    marginBottom: '50px', // Изменено расстояние до 50 пикселей
     boxSizing: 'border-box'
   };
 
@@ -192,7 +192,7 @@ export default function Compass() {
       )}
 
       {/* Выбор точки */}
-      <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
+      <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '50px' }}>
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор точки</p>
         <select
           value={selectedLocation ? selectedLocation.name : ''}

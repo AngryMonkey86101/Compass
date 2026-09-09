@@ -23,6 +23,7 @@ export default function Compass() {
   const [coords, setCoords] = useState(null);
   const [alpha, setAlpha] = useState(0);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
 
   // Поля для новой точки
   const [newName, setNewName] = useState('');
@@ -60,6 +61,10 @@ export default function Compass() {
       }
 
       setAlpha(newHeading);
+
+      // Сохранение сырых данных в отладочную информацию
+      const debugData = `type: ${event.type} alpha: ${event.alpha} beta: ${event.beta} gamma: ${event.gamma} absolute: ${event.absolute}`;
+      setDebugInfo(debugData);
     };
 
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
@@ -306,6 +311,11 @@ export default function Compass() {
       {/* Отладочная строка */}
       <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500', fontSize: '14px' }}>
         Отладка: alpha = {alpha !== null ? Math.round(alpha) + '°' : 'Ожидание датчиков...'}
+      </p>
+
+      {/* Отладочная информация */}
+      <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500', fontSize: '12px' }}>
+        {debugInfo}
       </p>
     </div>
   );

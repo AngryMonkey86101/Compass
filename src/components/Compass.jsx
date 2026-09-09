@@ -160,6 +160,13 @@ export default function Compass() {
     } else {
       setIsPermissionGranted(true);
     }
+
+    // Проверка поддержки deviceorientationabsolute
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    } else {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
   };
 
   return (

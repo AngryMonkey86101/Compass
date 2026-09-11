@@ -237,7 +237,7 @@ export default function Compass() {
           </div>
 
           {/* Импорт KMZ */}
-          <div style={{ ...cardStyle, textAlign: 'center' }}>
+          <div style={{ ...cardStyle, buttonStyle, textAlign: 'center' }}>
             <p style={{
               margin: '0 0 10px 0',
               fontSize: '14px',

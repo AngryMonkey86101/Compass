@@ -38,7 +38,11 @@ const useGeolocation = () => {
     };
 
     if ('geolocation' in navigator) {
-      watchId = navigator.geolocation.watchPosition(successCallback, errorCallback);
+      watchId = navigator.geolocation.watchPosition(
+        successCallback,
+        errorCallback,
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Добавлен третий аргумент с опциями
+      );
     } else {
       setError('Геолокация недоступна в вашем браузере');
       setIsLoading(false);

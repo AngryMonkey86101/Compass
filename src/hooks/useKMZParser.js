@@ -64,11 +64,28 @@ const useKMZParser = () => {
       const points = [];
       if (geojson && geojson.features) {
         for (const feature of geojson.features) {
-          if (feature.geometry && feature.geometry.type === 'Point') {
-            const name = feature.properties?.name || 'Без названия';
+          if (!feature.geometry) {
+            console.log('KMZ Пропущен объект без геометрии:', feature.properties?.name);
+            continue;
+          }
+
+          const geomType = feature.geometry.type;
+          const name = feature.properties?.name || 'Без названия';
+
+          if (geomType === 'Point') {
             const lon = feature.geometry.coordinates[0];
             const lat = feature.geometry.coordinates[1];
             points.push({ name, lat, lon });
+          } else if (geomType === 'LineString' || geomType === 'Polygon') {
+            // Для линий и полигонов берем первую точку как ориентир
+            const coords = Array.isArray(feature.geometry.coordinates) ? feature.geometry.coordinates : [feature.geometry.coordinates];
+            const firstCoord = coords[0];
+            const lon = firstCoord[0];
+            const lat = firstCoord[1];
+            console.log('KMZ Найдена геометрия', geomType, 'используем первую точку для:', name);
+            points.push({ name, lat, lon });
+          } else {
+            console.log('KMZ Неизвестный тип геометрии', geomType, 'для объекта:', name);
           }
         }
       }

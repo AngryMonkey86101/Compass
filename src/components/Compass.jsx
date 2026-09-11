@@ -32,7 +32,13 @@ export default function Compass() {
   // 3. Вычисления на основе данных из хуков
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
   const rotation = (Number(bearing) - Number(alpha)) % 360;
-  const distance = coords && selectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
+
+  // Валидация координат для расчета дистанции
+  const validSelectedLocation = selectedLocation && 
+    typeof selectedLocation.lat === 'number' && !isNaN(selectedLocation.lat) &&
+    typeof selectedLocation.lon === 'number' && !isNaN(selectedLocation.lon);
+
+  const distance = coords && validSelectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
 
   // Обработчики событий
   const handleAddLocation = () => {

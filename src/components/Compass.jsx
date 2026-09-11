@@ -70,8 +70,13 @@ export default function Compass() {
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
-    if (file)
+    console.log('Выбран файл:', file);
+    if (file) {
+      console.log('Начинаем парсинг файла...');
       parseKMZFile(file);
+    } else {
+      console.log('Файл не выбран');
+    }
   };
 
   const handleAddParsedPoints = () => {

@@ -9,6 +9,7 @@ const useKMZParser = () => {
 
   const parseKMZFile = async (file) => {
     try {
+      console.log('parseKMZFile вызван с файлом:', file);
       setIsLoading(true);
       setError(null);
       setParsedPoints([]);

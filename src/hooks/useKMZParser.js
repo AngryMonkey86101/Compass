@@ -9,58 +9,78 @@ const useKMZParser = () => {
 
   const parseKMZFile = async (file) => {
     try {
-      console.log('parseKMZFile вызван с файлом:', file);
+      console.log('KMZ Начало парсинга, установка isLoading=true');
       setIsLoading(true);
       setError(null);
       setParsedPoints([]);
 
       if (!file || !file.name.toLowerCase().endsWith('.kmz')) {
+        console.log('KMZ Ошибка: неверное расширение файла');
         setError('Неверный формат файла. Ожидается файл с расширением .kmz');
         setIsLoading(false);
         return;
       }
 
+      console.log('KMZ Чтение файла как ArrayBuffer...');
       const arrayBuffer = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
         reader.onerror = (e) => reject(e.target.error);
         reader.readAsArrayBuffer(file);
       });
+      console.log('KMZ ArrayBuffer получен, размер:', arrayBuffer.byteLength);
 
+      console.log('KMZ Распаковка JSZip...');
       const zip = await JSZip.loadAsync(arrayBuffer);
+      console.log('KMZ Архив распакован, файлы:', Object.keys(zip.files));
 
       let kmlFile;
       for (const name in zip.files) {
         if (name.endsWith('.kml')) {
           kmlFile = zip.file(name);
+          console.log('KMZ Найден KML файл:', name);
           break;
         }
       }
 
       if (!kmlFile) {
+        console.log('KMZ Ошибка: KML файл не найден внутри архива');
         setError('Файл .kml не найден внутри архива .kmz');
         setIsLoading(false);
         return;
       }
 
+      console.log('KMZ Чтение содержимого KML как текст...');
       const kmlText = await kmlFile.async('text');
+      console.log('KMZ KML текст получен, длина:', kmlText.length);
+
+      console.log('KMZ Парсинг XML через DOMParser...');
       const xmlDoc = new DOMParser().parseFromString(kmlText, 'text/xml');
+
+      console.log('KMZ Конвертация в GeoJSON через tmcw/togeojson...');
       const geojson = kml(xmlDoc);
+      console.log('KMZ GeoJSON получен, количество features:', geojson.features ? geojson.features.length : 0);
 
       const points = [];
-      for (const feature of geojson.features) {
-        if (feature.geometry.type === 'Point') {
-          const name = feature.properties.name || '';
-          const lon = feature.geometry.coordinates[0];
-          const lat = feature.geometry.coordinates[1];
-          points.push({ name, lat, lon });
+      if (geojson && geojson.features) {
+        for (const feature of geojson.features) {
+          if (feature.geometry && feature.geometry.type === 'Point') {
+            const name = feature.properties?.name || 'Без названия';
+            const lon = feature.geometry.coordinates[0];
+            const lat = feature.geometry.coordinates[1];
+            points.push({ name, lat, lon });
+          }
         }
       }
 
+      console.log('KMZ Успешно извлечено точек:', points.length);
       setParsedPoints(points);
+
     } catch (err) {
-      setError(`Ошибка при чтении файла: ${err.message}`);
+      console.error('KMZ КРИТИЧЕСКАЯ ОШИБКА при парсинге:', err);
+      setError(`Ошибка при чтении файла: ${err.message || 'Неизвестная ошибка'}`);
     } finally {
+      console.log('KMZ Завершение парсинга, установка isLoading=false');
       setIsLoading(false);
     }
   };

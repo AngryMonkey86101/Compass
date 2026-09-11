@@ -7,6 +7,33 @@ const useKMZParser = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Универсальная функция для извлечения первых координат из любой геометрии GeoJSON
+  const extractFirstCoordinate = (geometry) => {
+    if (!geometry || !geometry.coordinates) return null;
+
+    const coords = geometry.coordinates;
+
+    // Рекурсивно ищем первые два числа в массиве
+    const findFirstNumbers = (arr) => {
+      if (Array.isArray(arr)) {
+        // Если это массив чисел (например, lon, lat)
+        if (arr.length === 2 && typeof arr[0] === 'number' && typeof arr[1] === 'number') {
+          return { lon: arr[0], lat: arr[1] };
+        }
+
+        // Иначе рекурсивно идем глубже
+        for (const item of arr) {
+          const result = findFirstNumbers(item);
+          if (result) return result;
+        }
+      }
+
+      return null;
+    };
+
+    return findFirstNumbers(coords);
+  };
+
   const parseKMZFile = async (file) => {
     try {
       console.log('KMZ Начало парсинга, установка isLoading=true');
@@ -69,37 +96,21 @@ const useKMZParser = () => {
             continue;
           }
 
-          const geomType = feature.geometry.type;
           const name = feature.properties?.name || 'Без названия';
+          const geomType = feature.geometry.type;
+          console.log('KMZ Обработка объекта:', name, 'типа геометрии:', geomType);
 
-          if (geomType === 'Point') {
-            const lon = feature.geometry.coordinates[0];
-            const lat = feature.geometry.coordinates[1];
+          const coord = extractFirstCoordinate(feature.geometry);
 
-            // Валидация координат
-            if (typeof lat === 'number' && !isNaN(lat) && lat >= -90 && lat <= 90 &&
-                typeof lon === 'number' && !isNaN(lon) && lon >= -180 && lon <= 180) {
-              points.push({ name, lat, lon });
-            } else {
-              console.warn('KMZ Пропущена точка с невалидными координатами:', name, lat, lon);
-            }
-          } else if (geomType === 'LineString' || geomType === 'Polygon') {
-            // Для линий и полигонов берем первую точку как ориентир
-            const coords = Array.isArray(feature.geometry.coordinates) ? feature.geometry.coordinates : [feature.geometry.coordinates];
-            const firstCoord = coords[0];
-            const lon = firstCoord[0];
-            const lat = firstCoord[1];
-
-            // Валидация координат
-            if (typeof lat === 'number' && !isNaN(lat) && lat >= -90 && lat <= 90 &&
-                typeof lon === 'number' && !isNaN(lon) && lon >= -180 && lon <= 180) {
-              console.log('KMZ Найдена геометрия', geomType, 'используем первую точку для:', name);
-              points.push({ name, lat, lon });
-            } else {
-              console.warn('KMZ Пропущена точка с невалидными координатами:', name, lat, lon);
-            }
+          if (coord && 
+              typeof coord.lat === 'number' && !isNaN(coord.lat) &&
+              typeof coord.lon === 'number' && !isNaN(coord.lon) &&
+              coord.lat >= -90 && coord.lat <= 90 &&
+              coord.lon >= -180 && coord.lon <= 180) {
+            points.push({ name, lat: coord.lat, lon: coord.lon });
+            console.log('KMZ Добавлена точка:', name, '(coord.lat, coord.lon)');
           } else {
-            console.log('KMZ Неизвестный тип геометрии', geomType, 'для объекта:', name);
+            console.warn('KMZ Пропущена точка с невалидными координатами:', name, coord);
           }
         }
       }

@@ -93,6 +93,16 @@ export default function Compass() {
     outline: 'none', fontFamily: 'inherit'
   };
 
+  const versionBadgeStyle = {
+    marginTop: 'auto',
+    fontSize: '12px',
+    color: '#8e8e93',
+    opacity: 0.7,
+    textAlign: 'center',
+    width: '100%',
+    paddingBottom: '10px'
+  };
+
   // 6. JSX разметка
   return (
     <div style={{
@@ -218,6 +228,8 @@ export default function Compass() {
       )}
       
       {debugInfo && <p style={{ fontSize: '12px', color: '#8e8e93', marginTop: '10px' }}>{debugInfo}</p>}
+
+      <p style={versionBadgeStyle}>Alpha v1.0.0</p>
     </div>
   );
 }

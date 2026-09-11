@@ -1,76 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { calculateDistance, calculateBearing } from '../utils/geoUtils';
+import React, { useState } from 'react';
+import useGeolocation from '../hooks/useGeolocation';
+import useDeviceOrientation from '../hooks/useDeviceOrientation';
+import useLocations from '../hooks/useLocations';
 
-const defaultLocations = [
-  { name: "Северный полюс", lat: 90.0, lon: 0.0 },
-  { name: "Москва (Красная площадь)", lat: 55.7535, lon: 37.6210 },
-  { name: "Париж (Эйфелева башня)", lat: 48.8584, lon: 2.2945 },
-  { name: "Токио (Сибуя)", lat: 35.6595, lon: 139.7005 },
-  { name: "Нью-Йорк (Таймс-сквер)", lat: 40.7580, lon: -73.9855 }
-];
-
-const compassLocations = 'compassLocations';
-
-export default function Compass() {
-  // Инициализация из localStorage
-  const [savedLocations, setSavedLocations] = useState(() => {
-    const saved = localStorage.getItem(compassLocations);
-    if (saved) try { return JSON.parse(saved); } catch (e) { return defaultLocations; }
-    return defaultLocations;
-  });
-
-  const [selectedLocation, setSelectedLocation] = useState(savedLocations.length > 0 ? savedLocations[0] : null);
-  const [coords, setCoords] = useState(null);
-  const [alpha, setAlpha] = useState(0);
-  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
-  const [debugInfo, setDebugInfo] = useState('');
+const Compass = () => {
+  const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
+  const { heading: alpha, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
+  const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
 
   // Поля для новой точки
   const [newName, setNewName] = useState('');
   const [newCoords, setNewCoords] = useState('');
-
-  // Объявление функции handleOrientation прямо внутри компонента
-  const handleOrientation = (event) => {
-    if (!event) return;
-    let newHeading = event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null
-      ? event.webkitCompassHeading
-      : (event.alpha !== undefined && event.alpha !== null ? 360 - event.alpha : 0);
-
-    // Коррекция направления для совместимости с Android
-    if (newHeading < 0) newHeading += 360;
-
-    setAlpha(Math.round(newHeading * 10) / 10); // Округление до одного знака после запятой
-    setDebugInfo(`type: ${event.type} alpha: ${event.alpha ? Math.round(event.alpha) : null}`);
-  };
-
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      const watchId = navigator.geolocation.watchPosition(
-        (pos) => setCoords({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          accuracy: pos.coords.accuracy
-        }),
-        (err) => console.error(err),
-        { enableHighAccuracy: true }
-      );
-      return () => navigator.geolocation.clearWatch(watchId);
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    window.addEventListener('deviceorientation', handleOrientation, true);
-
-    return () => {
-      window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
-      window.removeEventListener('deviceorientation', handleOrientation, true);
-    };
-  }, []);
-
-  const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
-  const rotation = (Number(bearing) - Number(alpha)) % 360;
-  const distance = coords && selectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
+  const [debugInfo, setDebugInfo] = useState('');
 
   const handleAddLocation = () => {
     if (!newName || !newCoords) return;
@@ -80,11 +21,7 @@ export default function Compass() {
     const lon = parseFloat(parts[1].trim());
     if (isNaN(lat) || isNaN(lon)) return;
 
-    const newLoc = { name: newName, lat, lon };
-    const updated = [...savedLocations, newLoc];
-    setSavedLocations(updated);
-    localStorage.setItem(compassLocations, JSON.stringify(updated));
-    setSelectedLocation(newLoc);
+    addLocation(newName, lat, lon);
     setNewName('');
     setNewCoords('');
   };
@@ -94,79 +31,17 @@ export default function Compass() {
     const name = window.prompt("Введите название для текущего места:", "Новая точка");
     if (!name) return;
 
-    const newLoc = { name: name.trim(), lat: coords.lat, lon: coords.lon };
-    const updated = [...savedLocations, newLoc];
-    setSavedLocations(updated);
-    localStorage.setItem(compassLocations, JSON.stringify(updated));
-    setSelectedLocation(newLoc);
+    addLocation(name, coords.lat, coords.lon);
   };
 
   const handleDeleteLocation = () => {
     if (!selectedLocation) return;
-    const updated = savedLocations.filter(loc => loc.name !== selectedLocation.name);
-    setSavedLocations(updated);
-    localStorage.setItem(compassLocations, JSON.stringify(updated));
-    setSelectedLocation(updated.length > 0 ? updated[0] : null);
+    deleteLocation(selectedLocation.name);
   };
 
-  const getAccuracyColor = (acc) => {
-    if (!acc) return '#8e8e93';
-    if (acc <= 15) return '#34C759'; 
-    if (acc <= 50) return '#FF9500'; 
-    return '#FF3B30'; 
-  };
-
-  // Общие стили для карточек интерфейса
-  const cardStyle = {
-    background: 'rgba(255, 255, 255, 0.85)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    borderRadius: '16px',
-    padding: '20px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
-    width: '100%',
-    maxWidth: '340px',
-    marginBottom: '50px', // Изменено расстояние до 50 пикселей
-    boxSizing: 'border-box'
-  };
-
-  const inputStyle = {
-    width: '100%', padding: '12px', margin: '8px 0', 
-    borderRadius: '10px', border: '1px solid #d1d1d6', 
-    background: '#f2f2f7', fontSize: '15px', boxSizing: 'border-box',
-    outline: 'none', fontFamily: 'inherit'
-  };
-
-  const buttonStyle = {
-    width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px', marginBottom: '10px', maxWidth: '320px' // Добавлено значение maxWidth
-  };
-
-  const selectStyle = {
-    width: '100%', padding: '12px', margin: '8px 0', 
-    borderRadius: '10px', border: '1px solid #d1d1d6', 
-    background: '#fff', fontSize: '15px', boxSizing: 'border-box',
-    outline: 'none', fontFamily: 'inherit'
-  };
-
-  const enableSensors = () => {
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission().then(permissionState => {
-        if (permissionState === 'granted') {
-          setIsPermissionGranted(true);
-        } else {
-          setDebugInfo('Разрешение на использование датчиков отклонено');
-        }
-      }).catch(error => {
-        setDebugInfo(`Ошибка при запросе разрешений: ${error.message}`);
-      });
-    } else {
-      setIsPermissionGranted(true);
-    }
-
-    // Проверка поддержки deviceorientationabsolute
-    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    window.addEventListener('deviceorientation', handleOrientation, true);
-  };
+  const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
+  const rotation = (Number(bearing) - Number(alpha)) % 360;
+  const distance = coords && selectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
 
   return (
     <div style={{
@@ -184,7 +59,7 @@ export default function Compass() {
       {/* Кнопка включения датчиков */}
       {!isPermissionGranted && (
         <button
-          onClick={enableSensors}
+          onClick={requestPermission}
           style={{ ...buttonStyle, marginTop: '20px', fontSize: '18px' }}
         >
           Включить компас
@@ -196,10 +71,7 @@ export default function Compass() {
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#8e8e93', textTransform: 'uppercase' }}>Выбор точки</p>
         <select
           value={selectedLocation ? selectedLocation.name : ''}
-          onChange={(e) => {
-            const loc = savedLocations.find(l => l.name === e.target.value);
-            if (loc) setSelectedLocation(loc);
-          }}
+          onChange={(e) => selectLocation(e.target.value)}
           style={{ ...selectStyle, width: '100%' }}
         >
           {savedLocations.map(l => (
@@ -303,4 +175,6 @@ export default function Compass() {
 
     </div>
   );
-}
+};
+
+export default Compass;

@@ -23,7 +23,15 @@ const useLocations = () => {
   }, [savedLocations]);
 
   const addLocation = (name, lat, lon) => {
-    const newLoc = { name, lat, lon };
+    // Проверяем, есть ли уже точка с таким именем
+    let finalName = name;
+    let counter = 1;
+    while (savedLocations.some(loc => loc.name === finalName)) {
+      finalName = `${name} (${counter})`;
+      counter++;
+    }
+
+    const newLoc = { name: finalName, lat, lon };
     setSavedLocations([...savedLocations, newLoc]);
     setSelectedLocation(newLoc);
   };

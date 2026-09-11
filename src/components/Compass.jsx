@@ -22,7 +22,7 @@ export default function Compass() {
   const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
 
   // Импорт KMZ
-  const { parsedPoints, error: kmzError, isLoading: isKmzLoading, parseKMZFile } = useKMZParser();
+  const { parsedPoints, error: kmzError, isLoading: isKmzLoading, parseKMZFile, clearParsedPoints } = useKMZParser();
 
   // 2. UI-состояния (обязательно нужны для формы и отладки)
   const [newName, setNewName] = useState('');
@@ -89,6 +89,7 @@ export default function Compass() {
     parsedPoints.forEach(point => {
       addLocation(point.name, point.lat, point.lon);
     });
+    clearParsedPoints(); // Очищаем список после добавления
   };
 
   // 6. JSX разметка

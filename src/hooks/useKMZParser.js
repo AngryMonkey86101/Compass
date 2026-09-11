@@ -127,7 +127,12 @@ const useKMZParser = () => {
     }
   };
 
-  return { parsedPoints, error, isLoading, parseKMZFile };
+  const clearParsedPoints = () => {
+    setParsedPoints([]);
+    setError(null);
+  };
+
+  return { parsedPoints, error, isLoading, parseKMZFile, clearParsedPoints };
 };
 
 export default useKMZParser;

@@ -3,6 +3,7 @@ import { calculateDistance, calculateBearing } from '../utils/geoUtils';
 import useGeolocation from '../hooks/useGeolocation';
 import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
+import useKMZParser from '../hooks/useKMZParser';
 import {
   getAccuracyColor,
   cardStyle,
@@ -20,17 +21,10 @@ export default function Compass() {
   const { heading: alpha, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
   const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
 
-  // 2. UI-состояния (остаются в компоненте)
-  const [newName, setNewName] = useState('');
-  const [newCoords, setNewCoords] = useState('');
-  const [debugInfo, setDebugInfo] = useState('');
+  // Импорт KMZ
+  const { parsedPoints, error: kmzError, isLoading: isKmzLoading, parseKMZFile } = useKMZParser();
 
-  // 3. Вычисления на основе данных из хуков
-  const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
-  const rotation = (Number(bearing) - Number(alpha)) % 360;
-  const distance = coords && selectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
-
-  // 4. Обработчики событий
+  // Обработчики событий
   const handleAddLocation = () => {
     if (!newName || !newCoords) return;
     const parts = newCoords.split(',');
@@ -62,6 +56,18 @@ export default function Compass() {
     } catch (err) {
       setDebugInfo(`Ошибка при запросе разрешений: ${err.message}`);
     }
+  };
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file)
+      parseKMZFile(file);
+  };
+
+  const handleAddParsedPoints = () => {
+    parsedPoints.forEach(point => 
+      addLocation(point.name, point.lat, point.lon);
+    );
   };
 
   // 6. JSX разметка
@@ -218,6 +224,46 @@ export default function Compass() {
             <button onClick={handleAddLocation} style={buttonStyle}>
               Добавить
             </button>
+          </div>
+
+          {/* Импорт KMZ */}
+          <div style={{ ...cardStyle, textAlign: 'center' }}>
+            <p style={{
+              margin: '0 0 10px 0',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#8e8e93',
+              textTransform: 'uppercase'
+            }}>Импорт карты</p>
+            <input
+              type="file"
+              accept=".kmz"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+              id="kmz-file-input"
+            />
+            <label htmlFor="kmz-file-input" style={{ ...buttonStyle, display: 'inline-block', cursor: 'pointer' }}>
+              {isKmzLoading ? 'Загрузка...' : 'Выбрать .kmz файл'}
+            </label>
+            {kmzError && (
+              <p style={{
+                color: '#FF3B30',
+                marginTop: '10px',
+                fontSize: '14px'
+              }}>{kmzError}</p>
+            )}
+            {parsedPoints.length > 0 && (
+              <>
+                <p style={{
+                  marginTop: '15px',
+                  fontSize: '14px',
+                  color: '#1c1c1e'
+                }}>Найдено точек: {parsedPoints.length}</p>
+                <button onClick={handleAddParsedPoints} style={{ ...buttonStyle, marginTop: '10px' }}>
+                  Добавить все точки
+                </button>
+              </>
+            )}
           </div>
 
           {/* Телеметрия */}

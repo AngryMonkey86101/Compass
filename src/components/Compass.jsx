@@ -24,6 +24,16 @@ export default function Compass() {
   // Импорт KMZ
   const { parsedPoints, error: kmzError, isLoading: isKmzLoading, parseKMZFile } = useKMZParser();
 
+  // 2. UI-состояния (обязательно нужны для формы и отладки)
+  const [newName, setNewName] = useState('');
+  const [newCoords, setNewCoords] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
+
+  // 3. Вычисления на основе данных из хуков
+  const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
+  const rotation = (Number(bearing) - Number(alpha)) % 360;
+  const distance = coords && selectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon).toFixed(2) + ' км' : 'Нет точки';
+
   // Обработчики событий
   const handleAddLocation = () => {
     if (!newName || !newCoords) return;
@@ -65,9 +75,9 @@ export default function Compass() {
   };
 
   const handleAddParsedPoints = () => {
-  parsedPoints.forEach(point => {
-    addLocation(point.name, point.lat, point.lon);
-  });
+    parsedPoints.forEach(point => {
+      addLocation(point.name, point.lat, point.lon);
+    });
   };
 
   // 6. JSX разметка

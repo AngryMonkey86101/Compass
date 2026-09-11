@@ -65,9 +65,9 @@ export default function Compass() {
   };
 
   const handleAddParsedPoints = () => {
-    parsedPoints.forEach(point => 
-      addLocation(point.name, point.lat, point.lon);
-    );
+  parsedPoints.forEach(point => {
+    addLocation(point.name, point.lat, point.lon);
+  });
   };
 
   // 6. JSX разметка

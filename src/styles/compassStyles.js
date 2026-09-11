@@ -21,24 +21,48 @@ export const cardStyle = {
 };
 
 export const inputStyle = {
-  width: '100%', padding: '12px', margin: '8px 0',
-  borderRadius: '10px', border: '1px solid #d1d1d6',
-  background: '#f2f2f7', fontSize: '15px', boxSizing: 'border-box',
-  outline: 'none', fontFamily: 'inherit'
+  width: '100%', 
+  padding: '12px', 
+  margin: '8px',
+  borderRadius: '10px', 
+  border: '1px solid #d1d1d6',
+  background: '#f2f2f7', 
+  fontSize: '15px', 
+  boxSizing: 'border-box',
+  outline: 'none', 
+  fontFamily: 'inherit'
 };
 
 export const buttonStyle = {
-  width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '16px'
+  width: '100%', 
+  marginTop: '10px', 
+  marginBottom: '30px', 
+  padding: '12px', 
+  background: '#34C759', 
+  color: 'white', 
+  border: 'none', 
+  borderRadius: '10px', 
+  cursor: 'pointer', 
+  fontWeight: '600', 
+  fontSize: '16px', 
+  maxWidth: '300px',
 };
 
 export const selectStyle = {
-  width: '100%', padding: '12px', margin: '8px 0',
-  borderRadius: '10px', border: '1px solid #d1d1d6',
-  background: '#fff', fontSize: '15px', boxSizing: 'border-box',
-  outline: 'none', fontFamily: 'inherit'
+  width: '100%', padding: '12px', 
+  margin: '8px 0',
+  borderRadius: '10px', 
+  border: '1px solid #d1d1d6',
+  background: '#fff', 
+  fontSize: '15px', 
+  boxSizing: 'border-box',
+  outline: 'none', 
+  fontFamily: 'inherit'
 };
 
 export const containerStyle = {
+	marginTop: '10px',
+	marginBottom: '10px',
   minHeight: '100vh',
   background: 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)',
   padding: '30px 15px',

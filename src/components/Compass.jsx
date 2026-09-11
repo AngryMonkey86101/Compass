@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import calculateDistance, calculateBearing from '../utils/geoUtils';
+import { calculateDistance, calculateBearing } from '../utils/geoUtils';
 import useGeolocation from '../hooks/useGeolocation';
 import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
 
 export default function Compass() {
   // 1. Подключаем кастомные хуки
-  const coords, error: geoError, isLoading: isGeoLoading = useGeolocation();
-  const heading: alpha, isPermissionGranted, requestPermission, error: orientError = useDeviceOrientation();
-  const savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation = useLocations();
+  const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
+const { heading: alpha, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
+const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
+
 
   // 2. UI-состояния (остаются в компоненте)
   const [newName, setNewName] = useState('');
@@ -201,11 +202,11 @@ export default function Compass() {
       {coords ? (
         
           <p style={{ margin: '15px 0', color: '#8e8e93', textAlign: 'center', fontWeight: '500' }}>Ваши координаты</p>
-          <p style={{ margin: '5px 0', fontFamily: 'SFMono-Regular, Consolas, monospace', fontSize: '16px', color: '#1c1c1e' }}>
+          <p style={{ margin: '5px 0', fontFamily: 'SFMono-Regular, Consolas, monospace', fontSize: '16px', color: '#1c1c1e' }}></p>
             {coords.lat.toFixed(6)}, {coords.lon.toFixed(6)}
-          </p>
+          
           <p style={{ margin: '5px 0 15px 0', fontWeight: '600', color: getAccuracyColor(coords.accuracy), fontSize: '14px' }}>
-            Точность: {Math.round(coords.accuracy)} м
+            Точность: {Math.round(coords.accuracy)}
           </p>
           <button onClick={handleSaveCurrentLocation} style={buttonStyle}>
             + Сохранить текущее место

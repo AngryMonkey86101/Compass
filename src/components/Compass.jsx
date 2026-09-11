@@ -237,7 +237,7 @@ export default function Compass() {
           </div>
 
           {/* Импорт KMZ */}
-          <div style={{ ...cardStyle, buttonStyle, textAlign: 'center' }}>
+          <div style={{ ...cardStyle, textAlign: 'center' }}>
             <p style={{
               margin: '0 0 10px 0',
               fontSize: '14px',
@@ -252,7 +252,7 @@ export default function Compass() {
               style={{ display: 'none' }}
               id="kmz-file-input"
             />
-            <label htmlFor="kmz-file-input" style={{ ...buttonStyle, display: 'inline-block', cursor: 'pointer' }}>
+            <label htmlFor="kmz-file-input" style={buttonStyle}>
               {isKmzLoading ? 'Загрузка...' : 'Выбрать .kmz файл'}
             </label>
             {kmzError && (

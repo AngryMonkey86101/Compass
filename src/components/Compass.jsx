@@ -13,6 +13,44 @@ const Compass = () => {
   const [newCoords, setNewCoords] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
 
+  const getAccuracyColor = (acc) => {
+    if (!acc) return '#8e8e93';
+    if (acc <= 15) return '#34C759';
+    if (acc <= 50) return '#FF9500';
+    return '#FF3B30';
+  };
+
+  const cardStyle = {
+    background: 'rgba(255, 255, 255, 0.85)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    borderRadius: '16px',
+    padding: '20px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
+    width: '100%',
+    maxWidth: '340px',
+    marginBottom: '20px',
+    boxSizing: 'border-box'
+  };
+
+  const inputStyle = {
+    width: '100%', padding: '12px', margin: '8px 0',
+    borderRadius: '10px', border: '1px solid #d1d1d6',
+    background: '#f2f2f7', fontSize: '15px', boxSizing: 'border-box',
+    outline: 'none', fontFamily: 'inherit'
+  };
+
+  const buttonStyle = {
+    width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '16px'
+  };
+
+  const selectStyle = {
+    width: '100%', padding: '12px', margin: '8px 0',
+    borderRadius: '10px', border: '1px solid #d1d1d6',
+    background: '#fff', fontSize: '15px', boxSizing: 'border-box',
+    outline: 'none', fontFamily: 'inherit'
+  };
+
   const handleAddLocation = () => {
     if (!newName || !newCoords) return;
     const parts = newCoords.split(',');
@@ -175,30 +213,6 @@ const Compass = () => {
 
     </div>
   );
-};
-
-const buttonStyle = {
-  width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px', marginBottom: '10px', maxWidth: '320px'
-};
-
-const cardStyle = {
-  background: 'rgba(255, 255, 255, 0.85)',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
-  borderRadius: '16px',
-  padding: '20px',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
-  width: '100%',
-  maxWidth: '340px',
-  marginBottom: '50px', // Изменено расстояние до 50 пикселей
-  boxSizing: 'border-box'
-};
-
-const inputStyle = {
-  width: '100%', padding: '12px', margin: '8px 0', 
-  borderRadius: '10px', border: '1px solid #d1d1d6', 
-  background: '#f2f2f7', fontSize: '15px', boxSizing: 'border-box',
-  outline: 'none', fontFamily: 'inherit'
 };
 
 export default Compass;

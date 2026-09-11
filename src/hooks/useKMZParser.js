@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import JSZip from 'jszip';
-import kml from 'tmcw/togeojson';
+import { kml } from '@tmcw/togeojson';
 
 const useKMZParser = () => {
   const [parsedPoints, setParsedPoints] = useState([]);

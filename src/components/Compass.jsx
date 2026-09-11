@@ -240,6 +240,7 @@ export default function Compass() {
           <div style={{ ...cardStyle, textAlign: 'center' }}>
             <p style={{
               margin: '0 0 10px 0',
+              marginBottom: '20px',
               fontSize: '14px',
               fontWeight: '600',
               color: '#8e8e93',

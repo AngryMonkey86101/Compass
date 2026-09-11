@@ -161,7 +161,7 @@ export default function Compass() {
                 <svg viewBox="0 0 100 100" style={{
                   position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                   transform: `rotate(-${alpha}deg)`,
-                  transition: 'transform 0.1s ease'
+                  transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)'
                 }}>
                   <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e5e5ea" strokeWidth="2" />
                   <circle cx="50" cy="50" r="35" fill="none" stroke="#f2f2f7" strokeWidth="1" />
@@ -177,8 +177,9 @@ export default function Compass() {
                 <div style={{
                   position: 'absolute',
                   top: '50%',
-                  left: '50%',
-                  transform: `translate(-50%, -50%) rotate(${rotation}deg)`
+                  left: '50%', 
+                  transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                  transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)'
                 }}>
                   <svg viewBox="0 0 24 24" style={{
                     width: '150px', height: '150px',

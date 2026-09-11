@@ -86,10 +86,21 @@ export default function Compass() {
   };
 
   const handleAddParsedPoints = () => {
+    // Сначала удаляем старые точки с такими же именами
+    parsedPoints.forEach(point => {
+      // Проверяем, есть ли уже точка с таким именем
+      const existingLocation = savedLocations.find(loc => loc.name === point.name);
+      if (existingLocation) 
+        deleteLocation(point.name);
+      
+    });
+    
+    // Затем добавляем новые точки
     parsedPoints.forEach(point => {
       addLocation(point.name, point.lat, point.lon);
     });
-    clearParsedPoints(); // Очищаем список после добавления
+    
+    clearParsedPoints();
   };
 
   // 6. JSX разметка

@@ -16,7 +16,7 @@ export const cardStyle = {
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.05)',
   width: '100%',
   maxWidth: '340px',
-  marginBottom: '20px',
+  marginBottom: '50px',
   boxSizing: 'border-box'
 };
 

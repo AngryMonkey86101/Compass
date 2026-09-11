@@ -343,7 +343,7 @@ export default function Compass() {
       )}
 
       {/* Бейдж версии - показывается всегда */}
-      <p style={versionBadgeStyle}>Alpha v1.0.0</p>
+      <p style={versionBadgeStyle}>Alpha v1.0.1 kmz</p>
     </div>
   );
 }

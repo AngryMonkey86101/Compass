@@ -10,7 +10,8 @@ import {
   buttonStyle,
   selectStyle,
   containerStyle,
-  versionBadgeStyle
+  versionBadgeStyle,
+  titleStyle
 } from '../styles/compassStyles';
 
 export default function Compass() {
@@ -75,13 +76,7 @@ export default function Compass() {
           justifyContent: 'center',
           minHeight: '80vh'
         }}>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            marginBottom: '30px',
-            color: '#1c1c1e',
-            textAlign: 'center'
-          }}>Компас</h1>
+          <h1 style={titleStyle}>Компас</h1>
           <button
             onClick={enableSensors}
             style={{ ...buttonStyle, fontSize: '18px', padding: '16px 32px', maxWidth: '280px' }}

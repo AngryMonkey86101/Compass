@@ -83,3 +83,12 @@ export const versionBadgeStyle = {
   width: '100%',
   paddingBottom: '10px'
 };
+
+// Стили заголовка на экране запуска
+export const titleStyle = {
+  fontSize: '28px',
+  fontWeight: '700',
+  marginBottom: '30px',
+  color: '#1c1c1e',
+  textAlign: 'center'
+};

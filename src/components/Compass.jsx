@@ -138,7 +138,7 @@ export default function Compass() {
   };
 
   const buttonStyle = {
-    width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px', marginBottom: '10px' // Добавлено значение marginBottom
+    width: '100%', marginTop: '10px', padding: '12px', background: '#34C759', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '16px', marginBottom: '10px', maxWidth: '320px' // Добавлено значение maxWidth
   };
 
   const selectStyle = {

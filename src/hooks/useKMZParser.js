@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import JSZip from 'jszip';
-import kml from 'togeojson';
+import kml from 'tmcw/togeojson';
 
 const useKMZParser = () => {
   const [parsedPoints, setParsedPoints] = useState([]);
@@ -13,8 +13,8 @@ const useKMZParser = () => {
       setError(null);
       setParsedPoints([]);
 
-      if (!file || file.type !== 'application/vnd.google-earth.kmz') {
-        setError('Неверный формат файла. Ожидается .kmz');
+      if (!file || !file.name.toLowerCase().endsWith('.kmz')) {
+        setError('Неверный формат файла. Ожидается файл с расширением .kmz');
         setIsLoading(false);
         return;
       }

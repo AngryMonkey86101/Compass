@@ -5,6 +5,10 @@ const useDeviceOrientation = () => {
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [error, setError] = useState(null);
 
+  // Переменные для фильтра координат
+  let previousHeading = 0;
+  const smoothingFactor = 0.15; // Чем меньше, тем плавнее (0.1-0.3)
+
   const requestPermission = async () => {
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
       try {
@@ -24,41 +28,23 @@ const useDeviceOrientation = () => {
 
   useEffect(() => {
     let handleOrientation = null;
-    let previousHeading = 0;
 
     if (isPermissionGranted) {
       handleOrientation = (event) => {
-        let newHeading;
+        let newHeading = event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null
+          ? event.webkitCompassHeading
+          : (event.alpha !== undefined && event.alpha !== null ? 360 - event.alpha : 0);
         
-        // Приоритет 1: webkitCompassHeading (iOS, самый точный)
-        if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
-          newHeading = event.webkitCompassHeading;
-        } 
-        // Приоритет 2: absolute orientation (Android с компасом)
-        else if (event.absolute && event.alpha !== undefined && event.alpha !== null) {
-          newHeading = 360 - event.alpha;
-        }
-        // Приоритет 3: обычная orientation (менее точный)
-        else if (event.alpha !== undefined && event.alpha !== null) {
-          newHeading = 360 - event.alpha;
-        } else {
-          return;
-        }
+        if (newHeading < 0) newHeading += 360;
         
-        // Нормализуем значение
-        newHeading = ((newHeading % 360) + 360) % 360;
-        
-        // Увеличиваем smoothingFactor для большей плавности (0.08 = очень плавно)
-        const currentSmoothingFactor = 0.04;
-        
+        // Low-pass filter для сглаживания резких скачков
         let diff = newHeading - previousHeading;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
         
-        const smoothedHeading = previousHeading + diff * currentSmoothingFactor;
-        previousHeading = ((smoothedHeading % 360) + 360) % 360;
+        const smoothedHeading = previousHeading + diff * smoothingFactor;
+        previousHeading = smoothedHeading < 0 ? smoothedHeading + 360 : smoothedHeading % 360;
         
-        // Округляем до 1 знака после запятой для плавности
         setHeading(Math.round(previousHeading * 10) / 10);
       };
 

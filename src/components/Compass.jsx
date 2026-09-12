@@ -4,6 +4,7 @@ import useGeolocation from '../hooks/useGeolocation';
 import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
 import useKMZParser from '../hooks/useKMZParser';
+import useSmoothRotation from '../hooks/useSmoothRotation';
 import {
   getAccuracyColor,
   cardStyle,
@@ -31,7 +32,9 @@ export default function Compass() {
 
   // 3. Вычисления на основе данных из хуков
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
-  const rotation = (Number(bearing) - Number(alpha)) % 360;
+  const targetRotation = (Number(bearing) - Number(alpha)) % 360;
+  const smoothRotation = useSmoothRotation(targetRotation, 200);
+  const smoothAlpha = useSmoothRotation(-alpha, 200);
 
   // Валидация координат для расчета дистанции
   const validSelectedLocation = selectedLocation && 
@@ -199,8 +202,7 @@ export default function Compass() {
               }}>
                 <svg viewBox="0 0 100 100" style={{
                   position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                  transform: `rotate(-${alpha}deg)`,
-                  transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)'
+                  transform: `rotate(${smoothAlpha}deg)`
                 }}>
                   <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e5e5ea" strokeWidth="2" />
                   <circle cx="50" cy="50" r="35" fill="none" stroke="#f2f2f7" strokeWidth="1" />
@@ -217,8 +219,7 @@ export default function Compass() {
                   position: 'absolute',
                   top: '50%',
                   left: '50%', 
-                  transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-                  transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)'
+                  transform: `translate(-50%, -50%) rotate(${smoothRotation}deg)`
                 }}>
                   <svg viewBox="0 0 24 24" style={{
                     width: '150px', height: '150px',

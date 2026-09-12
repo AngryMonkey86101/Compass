@@ -32,8 +32,13 @@ export default function Compass() {
 
   // 3. Вычисления на основе данных из хуков
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
-  const targetRotation = (Number(bearing) - Number(alpha)) % 360;
-  const smoothRotation = useSmoothRotation(targetRotation, 200);
+  
+  // Расчёт угла поворота стрелки с учётом кратчайшего пути
+  let rotation = (Number(bearing) - Number(alpha)) % 360;
+  if (rotation > 180) rotation -= 360;
+  if (rotation < -180) rotation += 360;
+
+  const smoothRotation = useSmoothRotation(rotation, 200);
   const smoothAlpha = useSmoothRotation(-alpha, 200);
 
   // Валидация координат для расчета дистанции
@@ -202,7 +207,7 @@ export default function Compass() {
               }}>
                 <svg viewBox="0 0 100 100" style={{
                   position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                  transform: `rotate(${smoothAlpha}deg)`
+                  transform: `rotate(-${alpha}deg)`
                 }}>
                   <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e5e5ea" strokeWidth="2" />
                   <circle cx="50" cy="50" r="35" fill="none" stroke="#f2f2f7" strokeWidth="1" />

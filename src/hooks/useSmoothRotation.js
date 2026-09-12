@@ -1,60 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 
-export default function useSmoothRotation(targetRotation, duration = 150) {
+export default function useSmoothRotation(targetRotation, smoothingFactor = 0.15) {
   const [smoothRotation, setSmoothRotation] = useState(targetRotation);
-  const animationRef = useRef(null);
-  const startTimeRef = useRef(null);
-  const startValueRef = useRef(targetRotation);
+  const previousRef = useRef(targetRotation);
 
   useEffect(() => {
-    const startValue = startValueRef.current;
-    const diff = targetRotation - startValue;
+    let diff = targetRotation - previousRef.current;
     
-    // Нормализуем разницу для кратчайшего пути
-    let normalizedDiff = diff;
-    if (diff > 180) normalizedDiff -= 360;
-    if (diff < -180) normalizedDiff += 360;
+    // Нормализуем разницу для кратчайшего пути (избегаем скачков через 360°)
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
     
-    const endValue = startValue + normalizedDiff;
+    const smoothed = previousRef.current + diff * smoothingFactor;
     
-    if (Math.abs(normalizedDiff) < 0.1) {
-      setSmoothRotation(targetRotation);
-      startValueRef.current = targetRotation;
-      return;
-    }
-
-    const animate = (timestamp) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const elapsed = timestamp - startTimeRef.current;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Easing function (ease-out)
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      
-      const currentValue = startValue + normalizedDiff * easeOut;
-      setSmoothRotation(currentValue);
-      
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        startValueRef.current = targetRotation;
-        startTimeRef.current = null;
-      }
-    };
-
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
+    // Нормализуем результат в диапазон [-180, 180)
+    let normalized = smoothed;
+    if (normalized > 180) normalized -= 360;
+    if (normalized < -180) normalized += 360;
     
-    startTimeRef.current = null;
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [targetRotation, duration]);
+    previousRef.current = normalized;
+    setSmoothRotation(normalized);
+  }, [targetRotation, smoothingFactor]);
 
   return smoothRotation;
 }

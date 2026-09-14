@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 const useDeviceOrientation = () => {
   const [heading, setHeading] = useState(0);
   const [accuracy, setAccuracy] = useState(null);
+  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
+  const [error, setError] = useState(null);
 
   // Переменные для фильтра координат
   let previousHeading = 0;
@@ -10,9 +12,6 @@ const useDeviceOrientation = () => {
 
   const requestPermission = async () => {
     console.log('[Compass] Запрос разрешений...');
-    console.log('[Compass] DeviceOrientationEvent:', typeof DeviceOrientationEvent);
-    console.log('[Compass] requestPermission:', typeof DeviceOrientationEvent?.requestPermission);
-
     if (typeof DeviceOrientationEvent !== 'undefined' && 
         typeof DeviceOrientationEvent.requestPermission === 'function') {
       try {

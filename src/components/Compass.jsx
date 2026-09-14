@@ -19,7 +19,7 @@ import {
 export default function Compass() {
   // 1. Подключаем кастомные хуки
   const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
-  const { heading: alpha, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
+  const { heading: alpha, accuracy: compassAccuracy, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
   const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
 
   // Импорт KMZ
@@ -111,7 +111,10 @@ export default function Compass() {
     clearParsedPoints();
   };
 
-  // 6. JSX разметка
+  // Состояние для показа окна калибровки
+  const [showCalibration, setShowCalibration] = useState(false);
+
+  // Кнопка калибровки
   return (
     <div style={containerStyle}>
       {!isPermissionGranted ? (
@@ -348,8 +351,75 @@ export default function Compass() {
         </>
       )}
 
-      {/* Бейдж версии - показывается всегда */}
-      <p style={versionBadgeStyle}>Alpha v1.0.1 kmz</p>
+      {/* Кнопка калибровки */}
+      <div style={{ textAlign: 'center', marginBottom: 15px }}>
+        <button
+          onClick={() => setShowCalibration(true)}
+          style={{
+            ...buttonStyle,
+            background: compassAccuracy !== null && compassAccuracy > 15 ? '#FF9500' : '#8e8e93',
+            maxWidth: '250px',
+            fontSize: '14px',
+            padding: '10px'
+          }}
+        >
+          {compassAccuracy !== null && compassAccuracy > 15 ? 'Откалибровать компас' : 'Калибровать компас'}
+        </button>
+        {compassAccuracy !== null && (
+          <p style={{ fontSize: '12px', color: '#8e8e93', marginTop: '5px' }}>
+            Точность датчика: {Math.round(compassAccuracy)}
+          </p>
+        )}
+      </div>
+
+      {/* Модальное окно калибровки */}
+      {showCalibration && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px', color: 'white'
+        }}>
+          <h2 style={{ marginBottom: '20px', fontSize: '22px' }}>Калибровка компаса</h2>
+          
+          {/* Анимация восьмёрки */}
+          <div style={{
+            width: '120px', height: '60px', border: '3px solid #007AFF', borderRadius: '60px',
+            position: 'relative', marginBottom: '30px',
+            animation: 'figure8 3s infinite ease-in-out'
+          }}>
+            <div style={{
+              width: '16px', height: '16px', background: '#007AFF', borderRadius: '50%',
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              boxShadow: '0 0 10px #007AFF'
+            }} />
+          </div>
+
+          <p style={{ textAlign: 'center', fontSize: '16px', lineHeight: '1.5', maxWidth: '300px', marginBottom: '30px' }}>
+            Держите телефон перед собой и плавно опишите им в воздухе фигуру, похожую на восьмёрку или знак бесконечности (), 2-3 раза.
+          </p>
+
+          <button
+            onClick={() => setShowCalibration(false)}
+            style={{ ...buttonStyle, maxWidth: '200px', background: '#34C759' }}
+          >
+            Понятно, готово
+          </button>
+
+          {/* CSS анимация для восьмёрки */}
+          <style>
+            {`
+              @keyframes figure8 {
+                0% { transform: translate(0, 0) rotate(0deg); }
+                25% { transform: translate(30px, -20px) rotate(15deg); }
+                50% { transform: translate(0, 0) rotate(0deg); }
+                75% { transform: translate(-30px, 20px) rotate(-15deg); }
+                100% { transform: translate(0, 0) rotate(0deg); }
+              }
+            `}
+          </style>
+        </div>
+      )}
     </div>
   );
 }

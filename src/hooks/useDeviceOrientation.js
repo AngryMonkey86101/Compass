@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 
 const useDeviceOrientation = () => {
   const [heading, setHeading] = useState(0);
-  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
-  const [error, setError] = useState(null);
+  const [accuracy, setAccuracy] = useState(null);
 
   // Переменные для фильтра координат
   let previousHeading = 0;
@@ -81,6 +80,10 @@ const useDeviceOrientation = () => {
             lastDebugTime = now;
           }
         }
+
+        // Получаем точность компаса (доступно в iOS)
+        const acc = event.webkitCompassAccuracy !== undefined ? event.webkitCompassAccuracy : null;
+        setAccuracy(acc);
       };
       
       // Подписываемся на оба события (для совместимости)
@@ -99,7 +102,7 @@ const useDeviceOrientation = () => {
     };
   }, [isPermissionGranted]);
 
-  return { heading, isPermissionGranted, requestPermission, error };
+  return { heading, accuracy, isPermissionGranted, requestPermission, error };
 };
 
 export default useDeviceOrientation;

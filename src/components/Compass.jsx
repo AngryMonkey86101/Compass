@@ -4,6 +4,7 @@ import useGeolocation from '../hooks/useGeolocation';
 import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
 import useKMZParser from '../hooks/useKMZParser';
+import useGroupTracking from '../hooks/useGroupTracking';
 import {
   getAccuracyColor,
   cardStyle,
@@ -28,6 +29,10 @@ export default function Compass() {
   const [newName, setNewName] = useState('');
   const [newCoords, setNewCoords] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
+  const [showParticipants, setShowParticipants] = useState(false);
+  const { participants, selectedParticipants, isInGroup, toggleParticipant, selectAll, deselectAll } = useGroupTracking();
+  const [groupCode, setGroupCode] = useState(() => localStorage.getItem('currentGroupCode') || '');
+  const [participantName, setParticipantName] = useState(() => localStorage.getItem('participantName') || '');
 
   // 3. Вычисления на основе данных из хуков
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
@@ -59,6 +64,27 @@ export default function Compass() {
     const name = window.prompt("Введите название для текущего места:", "Новая точка");
     if (!name || !name.trim()) return;
     addLocation(name.trim(), coords.lat, coords.lon);
+  };
+
+  const handleJoinGroup = () => {
+    if (!groupCode.trim() || !participantName.trim()) {
+      alert('Введите код группы и ваше имя');
+      return;
+    }
+    localStorage.setItem('currentGroupCode', groupCode.trim());
+    localStorage.setItem('participantName', participantName.trim());
+    // Перезагружаем страницу, чтобы все хуки (useGroupTracking, useOfflineQueue)
+    // корректно подхватили новые значения из localStorage
+    window.location.reload();
+  };
+
+  const handleLeaveGroup = () => {
+    localStorage.removeItem('currentGroupCode');
+    localStorage.removeItem('participantName');
+    setGroupCode('');
+    setParticipantName('');
+    // Перезагружаем страницу для сброса состояния группы
+    window.location.reload();
   };
 
   const handleDeleteLocation = () => {
@@ -163,6 +189,69 @@ export default function Compass() {
             textAlign: 'center',
             marginBottom: '10px'
           }}>{geoError}</p>}
+
+          {/* Активные участники группы */}
+          {isInGroup && selectedParticipants.length > 0 && (
+            <div style={{ ...cardStyle, marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
+                Активные участники
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {participants
+                  .filter(p => selectedParticipants.includes(p.device_id))
+                  .map(p => (
+                    <div key={p.device_id} style={{
+                      padding: '6px 12px',
+                      background: p.color || '#007AFF',
+                      color: 'white',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}>
+                      {p.participant_name}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Управление группой */}
+          {isInGroup ? (
+            <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
+                Группа: {groupCode}
+              </p>
+              <button onClick={() => setShowParticipants(true)} style={buttonStyle}>
+                 Участники ({selectedParticipants.length}/{participants.length})
+              </button>
+              <button onClick={handleLeaveGroup} style={{ ...buttonStyle, background: '#FF3B30', marginTop: '10px' }}>
+                Покинуть группу
+              </button>
+            </div>
+          ) : (
+            <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
+                Присоединиться к группе
+              </p>
+              <input
+                type="text"
+                placeholder="Код группы (напр. 7X9K2M)"
+                value={groupCode}
+                onChange={(e) => setGroupCode(e.target.value)}
+                style={{ ...inputStyle, marginBottom: '10px' }}
+              />
+              <input
+                type="text"
+                placeholder="Ваше имя"
+                value={participantName}
+                onChange={(e) => setParticipantName(e.target.value)}
+                style={{ ...inputStyle, marginBottom: '10px' }}
+              />
+              <button onClick={handleJoinGroup} style={buttonStyle}>
+                Войти в группу
+              </button>
+            </div>
+          )}
 
           {/* Выбор точки */}
           <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
@@ -369,6 +458,92 @@ export default function Compass() {
             marginTop: '10px'
           }}>{debugInfo}</p>}
         </>
+      )}
+
+      {/* Модальное окно участников */}
+      {showParticipants && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px',
+          color: 'white'
+        }}>
+          <h2 style={{ marginBottom: '20px', fontSize: '22px' }}>Участники группы</h2>
+
+          <div style={{
+            display: 'flex',
+            gap: '10px',
+            marginBottom: '20px'
+          }}>
+            <button onClick={selectAll} style={{ ...buttonStyle, background: '#34C759', padding: '8px 16px', fontSize: '12px' }}>
+              Выбрать всех
+            </button>
+            <button onClick={deselectAll} style={{ ...buttonStyle, background: '#FF9500', padding: '8px 16px', fontSize: '12px' }}>
+              Снять всех
+            </button>
+          </div>
+
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+            padding: '15px',
+            maxHeight: '400px',
+            overflowY: 'auto',
+            width: '100%',
+            maxWidth: '400px'
+          }}>
+            {participants.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#8e8e93' }}>Нет активных участников</p>
+            ) : (
+              participants.map(p => (
+                <label key={p.device_id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  cursor: 'pointer'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedParticipants.includes(p.device_id)}
+                    onChange={() => toggleParticipant(p.device_id)}
+                    style={{ marginRight: '12px', width: '20px', height: '20px' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '16px', fontWeight: '500' }}>{p.participant_name}</div>
+                    <div style={{ fontSize: '12px', color: '#8e8e93', marginTop: '4px' }}>
+                      {p.device_id === (localStorage.getItem('deviceId') || '') ? 'Вы' : `Обновлено: ${new Date(p.updated_at).toLocaleTimeString()}`}
+                    </div>
+                  </div>
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: p.color || '#007AFF',
+                    marginLeft: '10px'
+                  }} />
+                </label>
+              ))
+            )}
+          </div>
+
+          <button
+            onClick={() => setShowParticipants(false)}
+            style={{ ...buttonStyle, maxWidth: '200px', background: '#34C759', marginTop: '20px' }}
+          >
+            Готово
+          </button>
+        </div>
       )}
 
       {/* Бейдж версии - показывается всегда */}

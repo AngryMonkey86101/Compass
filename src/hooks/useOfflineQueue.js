@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase, getDeviceId } from '../lib/supabase';
 
 const QUEUE_KEY = 'compassOfflineQueue';
 const MAX_QUEUE_SIZE = 100;
@@ -14,6 +15,7 @@ const useOfflineQueue = () => {
   });
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isFlushing, setIsFlushing] = useState(false);
+  const [lastFlushError, setLastFlushError] = useState(null);
 
   // Сохраняем очередь в localStorage при изменении
   useEffect(() => {
@@ -60,18 +62,42 @@ const useOfflineQueue = () => {
     if (queue.length === 0 || !isOnline || isFlushing) return;
 
     setIsFlushing(true);
+    setLastFlushError(null);
     try {
       console.log(`[OfflineQueue] Попытка отправки ${queue.length} записей...`);
 
-      // TODO: Здесь будет реальная отправка на сервер (например, Supabase)
-      // await api.sendPositions(queue.map(item => item.data));
+      const deviceId = getDeviceId();
+      const groupCode = localStorage.getItem('currentGroupCode') || 'default';
+      const participantName = localStorage.getItem('participantName') || 'Аноним';
 
-      // Имитация успешной отправки
-      await new Promise(resolve => setTimeout(resolve, 300));
-      console.log('[OfflineQueue] Успешно отправлено');
+      // Берем только ПОСЛЕДНЮЮ позицию из очереди (самую актуальную)
+      const lastItem = queue[queue.length - 1];
+      const latestPosition = {
+        group_code: groupCode,
+        device_id: deviceId,
+        participant_name: participantName,
+        lat: lastItem.data.lat,
+        lon: lastItem.data.lon,
+        heading: lastItem.data.heading || null,
+        accuracy: lastItem.data.accuracy || null,
+        color: '#007AFF'
+      };
+
+      // Используем upsert с правильным onConflict
+      const { error } = await supabase
+        .from('positions')
+        .upsert(latestPosition, {
+          onConflict: 'device_id,group_code',
+          ignoreDuplicates: false
+        });
+
+      if (error) throw error;
+
+      console.log('[OfflineQueue] Успешно отправлено в Supabase');
       setQueue([]);
     } catch (error) {
       console.error('[OfflineQueue] Ошибка отправки:', error);
+      throw error;
     } finally {
       setIsFlushing(false);
     }
@@ -93,6 +119,7 @@ const useOfflineQueue = () => {
     queueLength: queue.length,
     isOnline,
     isFlushing,
+    lastFlushError,
     enqueue,
     flush
   };

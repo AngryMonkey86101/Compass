@@ -30,6 +30,7 @@ export default function Compass() {
   const [newCoords, setNewCoords] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
   const [showParticipants, setShowParticipants] = useState(false);
+  const [showLocationsPage, setShowLocationsPage] = useState(false);
   const { participants, selectedParticipants, isInGroup, toggleParticipant, selectAll, deselectAll } = useGroupTracking();
   const [groupCode, setGroupCode] = useState(() => localStorage.getItem('currentGroupCode') || '');
   const [participantName, setParticipantName] = useState(() => localStorage.getItem('participantName') || '');
@@ -44,6 +45,34 @@ export default function Compass() {
     typeof selectedLocation.lon === 'number' && !isNaN(selectedLocation.lon);
 
   const distance = coords && validSelectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
+
+  // Генерация цветов для участников
+  const participantColors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FF2D55', '#5AC8FA'];
+
+  const groupMembersWithBearing = isInGroup && coords && participants.length > 0
+    ? participants
+        .filter(p => selectedParticipants.includes(p.device_id) && p.device_id !== (localStorage.getItem('deviceId') || ''))
+        .map((p, index) => {
+          // Проверяем, что координаты валидны
+          if (!p.lat || !p.lon || isNaN(p.lat) || isNaN(p.lon)) {
+            return null;
+          }
+
+          const bearing = calculateBearing(coords.lat, coords.lon, p.lat, p.lon);
+          const distance = calculateDistance(coords.lat, coords.lon, p.lat, p.lon);
+          const rotation = (bearing - alpha) % 360;
+          const color = participantColors[index % participantColors.length];
+
+          return {
+            ...p,
+            bearing: isNaN(bearing) ? 0 : bearing,
+            distance: isNaN(distance) ? 0 : distance,
+            rotation: isNaN(rotation) ? 0 : rotation,
+            color
+          };
+        })
+        .filter(p => p !== null) // Убираем участников с невалидными координатами
+    : [];
 
   // Обработчики событий
   const handleAddLocation = () => {
@@ -190,96 +219,6 @@ export default function Compass() {
             marginBottom: '10px'
           }}>{geoError}</p>}
 
-          {/* Активные участники группы */}
-          {isInGroup && selectedParticipants.length > 0 && (
-            <div style={{ ...cardStyle, marginBottom: '20px' }}>
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
-                Активные участники
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {participants
-                  .filter(p => selectedParticipants.includes(p.device_id))
-                  .map(p => (
-                    <div key={p.device_id} style={{
-                      padding: '6px 12px',
-                      background: p.color || '#007AFF',
-                      color: 'white',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}>
-                      {p.participant_name}
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* Управление группой */}
-          {isInGroup ? (
-            <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
-                Группа: {groupCode}
-              </p>
-              <button onClick={() => setShowParticipants(true)} style={buttonStyle}>
-                 Участники ({selectedParticipants.length}/{participants.length})
-              </button>
-              <button onClick={handleLeaveGroup} style={{ ...buttonStyle, background: '#FF3B30', marginTop: '10px' }}>
-                Покинуть группу
-              </button>
-            </div>
-          ) : (
-            <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
-                Присоединиться к группе
-              </p>
-              <input
-                type="text"
-                placeholder="Код группы (напр. 7X9K2M)"
-                value={groupCode}
-                onChange={(e) => setGroupCode(e.target.value)}
-                style={{ ...inputStyle, marginBottom: '10px' }}
-              />
-              <input
-                type="text"
-                placeholder="Ваше имя"
-                value={participantName}
-                onChange={(e) => setParticipantName(e.target.value)}
-                style={{ ...inputStyle, marginBottom: '10px' }}
-              />
-              <button onClick={handleJoinGroup} style={buttonStyle}>
-                Войти в группу
-              </button>
-            </div>
-          )}
-
-          {/* Выбор точки */}
-          <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
-            <p style={{
-              margin: '0 0 10px 0',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#8e8e93',
-              textTransform: 'uppercase'
-            }}>Выбор точки</p>
-            <select
-              value={selectedLocation ? selectedLocation.name : ''}
-              onChange={(e) => selectLocation(e.target.value)}
-              style={selectStyle}
-            >
-              {savedLocations.map(l => (
-                <option key={l.name} value={l.name}>{l.name}</option>
-              ))}
-            </select>
-            <button
-              onClick={handleDeleteLocation}
-              disabled={!selectedLocation}
-              style={{ ...buttonStyle, background: '#FF3B30', marginTop: '10px' }}
-            >
-              Удалить выбранную точку
-            </button>
-          </div>
-
           {/* Блок Компаса */}
           {selectedLocation ? (
             <div style={{
@@ -334,6 +273,35 @@ export default function Compass() {
                     <path d="M12 2L3 20l9-5 9 5z" fill="#007AFF" />
                   </svg>
                 </div>
+                {/* Точки участников группы на внешнем циферблате */}
+                {groupMembersWithBearing.map(member => {
+                  const radius = 44; // радиус в % от половины размера (чуть внутри внешнего круга)
+                  const angleRad = (member.bearing - 90) * Math.PI / 180;
+                  const x = 50 + radius * Math.cos(angleRad);
+                  const y = 50 + radius * Math.sin(angleRad);
+                  return (
+                    <div
+                      key={member.device_id}
+                      style={{
+                        position: 'absolute',
+                        top: `${y}%`,
+                        left: `${x}%`,
+                        transform: 'translate(-50%, -50%)',
+                        transition: 'top 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                        zIndex: 10
+                      }}
+                    >
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '50%',
+                        background: member.color || '#007AFF',
+                        border: '2px solid white',
+                        boxShadow: `0 2px 6px ${member.color || '#007AFF'}80`
+                      }} />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -344,27 +312,118 @@ export default function Compass() {
             }}>Добавьте точку для навигации</p>
           )}
 
-          {/* Ручное добавление точки */}
-          <div style={{ ...cardStyle, textAlign: 'center' }}>
-            <p style={{
-              margin: '0 0 10px 0',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#8e8e93',
-              textTransform: 'uppercase'
-            }}>Новая точка</p>
-            <input
-              type="text" placeholder="Название (напр. Дом)" value={newName}
-              onChange={(e) => setNewName(e.target.value)} style={inputStyle}
-            />
-            <input
-              type="text" placeholder="Широта, Долгота" value={newCoords}
-              onChange={(e) => setNewCoords(e.target.value)} style={inputStyle}
-            />
-            <button onClick={handleAddLocation} style={buttonStyle}>
-              Добавить
-            </button>
-          </div>
+          {/* Активные участники группы */}
+          {isInGroup && selectedParticipants.length > 0 && (
+            <div style={{ ...cardStyle, marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
+                Активные участники
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {participants
+                  .filter(p => selectedParticipants.includes(p.device_id))
+                  .map(p => (
+                    <div key={p.device_id} style={{
+                      padding: '6px 12px',
+                      background: p.color || '#007AFF',
+                      color: 'white',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '500'
+                    }}>
+                      {p.participant_name}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Легенда участников группы */}
+          {groupMembersWithBearing.length > 0 && (
+            <div style={{
+              marginTop: '20px',
+              marginBottom: '20px',
+              padding: '15px',
+              background: 'rgba(255,255,255,0.9)',
+              borderRadius: '12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            }}>
+              <p style={{
+                margin: '0 0 10px 0',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#8e8e93',
+                textTransform: 'uppercase',
+                textAlign: 'center'
+              }}>Участники на компасе</p>
+              {groupMembersWithBearing.map(member => (
+                <div key={member.device_id} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '8px 0',
+                  borderBottom: '1px solid rgba(0,0,0,0.05)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: member.color || '#007AFF'
+                    }} />
+                    <span style={{ fontSize: '14px', fontWeight: '500' }}>{member.participant_name}</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '12px', color: '#8e8e93' }}>
+                      {member.distance > 1000
+                        ? `${(member.distance / 1000).toFixed(1)} км`
+                        : `${Math.round(member.distance)} м`}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#8e8e93' }}>
+                      {Math.round(member.bearing)}°
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Управление группой */}
+          {isInGroup ? (
+            <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
+                Группа: {groupCode}
+              </p>
+              <button onClick={() => setShowParticipants(true)} style={buttonStyle}>
+                 Участники ({selectedParticipants.length}/{participants.length})
+              </button>
+              <button onClick={handleLeaveGroup} style={{ ...buttonStyle, background: '#FF3B30', marginTop: '10px' }}>
+                Покинуть группу
+              </button>
+            </div>
+          ) : (
+            <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>
+                Присоединиться к группе
+              </p>
+              <input
+                type="text"
+                placeholder="Код группы (напр. 7X9K2M)"
+                value={groupCode}
+                onChange={(e) => setGroupCode(e.target.value)}
+                style={{ ...inputStyle, marginBottom: '10px' }}
+              />
+              <input
+                type="text"
+                placeholder="Ваше имя"
+                value={participantName}
+                onChange={(e) => setParticipantName(e.target.value)}
+                style={{ ...inputStyle, marginBottom: '10px' }}
+              />
+              <button onClick={handleJoinGroup} style={buttonStyle}>
+                Войти в группу
+              </button>
+            </div>
+          )}
 
           {/* Импорт KMZ */}
           <div style={{ ...cardStyle, textAlign: 'center' }}>
@@ -405,6 +464,13 @@ export default function Compass() {
                 </button>
               </>
             )}
+          </div>
+
+          {/* Кнопка перехода к выбору точки */}
+          <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
+            <button onClick={() => setShowLocationsPage(true)} style={buttonStyle}>
+              📍 Выбор точки
+            </button>
           </div>
 
           {/* Телеметрия */}
@@ -458,6 +524,82 @@ export default function Compass() {
             marginTop: '10px'
           }}>{debugInfo}</p>}
         </>
+      )}
+
+      {/* Страница выбора точки */}
+      {showLocationsPage && (
+        <div style={{
+          ...containerStyle,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1100,
+          padding: '20px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{ width: '100%', maxWidth: '500px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <button
+              onClick={() => setShowLocationsPage(false)}
+              style={{ ...buttonStyle, background: '#8e8e93', marginBottom: '20px', maxWidth: '200px' }}
+            >
+              ← Назад
+            </button>
+
+            <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px', width: '100%' }}>
+              <p style={{
+                margin: '0 0 10px 0',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#8e8e93',
+                textTransform: 'uppercase'
+              }}>Выбор точки</p>
+              <select
+                value={selectedLocation ? selectedLocation.name : ''}
+                onChange={(e) => selectLocation(e.target.value)}
+                style={selectStyle}
+              >
+                {savedLocations.map(l => (
+                  <option key={l.name} value={l.name}>{l.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleDeleteLocation}
+                disabled={!selectedLocation}
+                style={{ ...buttonStyle, background: '#FF3B30', marginTop: '10px' }}
+              >
+                Удалить выбранную точку
+              </button>
+            </div>
+
+            {/* Ручное добавление точки */}
+            <div style={{ ...cardStyle, textAlign: 'center', width: '100%' }}>
+              <p style={{
+                margin: '0 0 10px 0',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#8e8e93',
+                textTransform: 'uppercase'
+              }}>Новая точка</p>
+              <input
+                type="text" placeholder="Название (напр. Дом)" value={newName}
+                onChange={(e) => setNewName(e.target.value)} style={inputStyle}
+              />
+              <input
+                type="text" placeholder="Широта, Долгота" value={newCoords}
+                onChange={(e) => setNewCoords(e.target.value)} style={inputStyle}
+              />
+              <button onClick={handleAddLocation} style={buttonStyle}>
+                Добавить
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Модальное окно участников */}

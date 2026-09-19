@@ -17,7 +17,7 @@ import {
 
 export default function Compass() {
   // 1. Подключаем кастомные хуки
-  const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
+  const { coords, error: geoError, isLoading: isGeoLoading, isOnline } = useGeolocation();
   const { heading: alpha, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
   const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
 
@@ -134,6 +134,24 @@ export default function Compass() {
       ) : (
         // Основной интерфейс
         <>
+          {!isOnline && (
+            <div style={{
+              position: 'fixed',
+              top: '15px',
+              right: '15px',
+              padding: '6px 12px',
+              borderRadius: '15px',
+              background: '#FF9500',
+              color: 'white',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              zIndex: 1000,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}>
+              📡 Оффлайн режим
+            </div>
+          )}
+
           {/* Ошибки */}
           {orientError && <p style={{
             color: '#FF3B30',
@@ -324,6 +342,17 @@ export default function Compass() {
               <button onClick={handleSaveCurrentLocation} style={buttonStyle}>
                 + Сохранить текущее место
               </button>
+              {!isOnline && (
+                <p style={{
+                  marginTop: '15px',
+                  fontSize: '12px',
+                  color: '#FF9500',
+                  textAlign: 'center',
+                  fontWeight: '500'
+                }}>
+                  ⚠️ Данные кэшируются локально
+                </p>
+              )}
             </>
           ) : (
             <p style={{

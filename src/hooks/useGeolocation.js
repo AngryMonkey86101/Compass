@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import useOfflineQueue from './useOfflineQueue';
 
 const useGeolocation = () => {
+  const { enqueue, isOnline } = useOfflineQueue();
   const [coords, setCoords] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -9,12 +11,17 @@ const useGeolocation = () => {
     let watchId;
 
     const successCallback = (position) => {
-      setCoords({
+      const newCoords = {
         lat: position.coords.latitude,
         lon: position.coords.longitude,
-        accuracy: position.coords.accuracy
-      });
+        accuracy: position.coords.accuracy,
+        timestamp: Date.now()
+      };
+      setCoords(newCoords);
       setIsLoading(false);
+
+      // Сохраняем позицию в оффлайн-очередь
+      enqueue(newCoords);
     };
 
     const errorCallback = (error) => {
@@ -55,7 +62,7 @@ const useGeolocation = () => {
     };
   }, []);
 
-  return { coords, error, isLoading };
+  return { coords, error, isLoading, isOnline };
 };
 
 export default useGeolocation;

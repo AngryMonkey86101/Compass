@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const QUEUE_KEY = 'offlineQueue';
-const MAX_QUEUE_SIZE = 100; // Максимальное количество записей в очереди
+const QUEUE_KEY = 'compassOfflineQueue';
+const MAX_QUEUE_SIZE = 100;
 
 const useOfflineQueue = () => {
   const [queue, setQueue] = useState(() => {
@@ -14,7 +14,6 @@ const useOfflineQueue = () => {
   });
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isFlushing, setIsFlushing] = useState(false);
-  const [lastFlushError, setLastFlushError] = useState(null);
 
   // Сохраняем очередь в localStorage при изменении
   useEffect(() => {
@@ -36,7 +35,7 @@ const useOfflineQueue = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [queue]);
+  }, [queue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Добавление данных в очередь
   const enqueue = useCallback((data) => {
@@ -44,11 +43,10 @@ const useOfflineQueue = () => {
       id: Date.now() + Math.random(),
       data,
       timestamp: Date.now(),
-      type: 'position' // Можно расширить для разных типов данных
+      type: 'position'
     };
 
     setQueue(prev => {
-      // Удаляем старые записи если очередь переполнена
       const newQueue = [...prev, item];
       if (newQueue.length > MAX_QUEUE_SIZE) {
         return newQueue.slice(-MAX_QUEUE_SIZE);
@@ -57,60 +55,46 @@ const useOfflineQueue = () => {
     });
   }, []);
 
-  // Отправка очереди на сервер
+  // Отправка очереди на сервер (пока имитация)
   const flush = useCallback(async () => {
     if (queue.length === 0 || !isOnline || isFlushing) return;
 
     setIsFlushing(true);
-    setLastFlushError(null);
-
     try {
-      // TODO: Здесь будет реальная отправка на сервер (Supabase/WebSocket)
-      // Пока просто имитируем успешную отправку
-      console.log(`[OfflineQueue] Отправка ${queue.length} записей...`);
+      console.log(`[OfflineQueue] Попытка отправки ${queue.length} записей...`);
 
-      // Имитация задержки сети
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // TODO: Здесь будет реальная отправка на сервер (например, Supabase)
+      // await api.sendPositions(queue.map(item => item.data));
 
-      // Если бы был сервер, здесь был бы код отправки:
-      // await supabase.from('positions').upsert(queue.map(item => item.data));
-
+      // Имитация успешной отправки
+      await new Promise(resolve => setTimeout(resolve, 300));
       console.log('[OfflineQueue] Успешно отправлено');
-      setQueue([]); // Очищаем очередь после успешной отправки
+      setQueue([]);
     } catch (error) {
       console.error('[OfflineQueue] Ошибка отправки:', error);
-      setLastFlushError(error.message);
     } finally {
       setIsFlushing(false);
     }
   }, [queue, isOnline, isFlushing]);
 
-  // Периодическая попытка отправки (каждые 30 секунд)
+  // Периодическая попытка отправки при наличии сети
   useEffect(() => {
     if (!isOnline || queue.length === 0) return;
 
     const interval = setInterval(() => {
       flush();
-    }, 30000);
+    }, 15000); // Попытка каждые 15 секунд
 
     return () => clearInterval(interval);
   }, [isOnline, queue.length, flush]);
-
-  // Ручная очистка очереди
-  const clearQueue = useCallback(() => {
-    setQueue([]);
-    localStorage.removeItem(QUEUE_KEY);
-  }, []);
 
   return {
     queue,
     queueLength: queue.length,
     isOnline,
     isFlushing,
-    lastFlushError,
     enqueue,
-    flush,
-    clearQueue
+    flush
   };
 };
 

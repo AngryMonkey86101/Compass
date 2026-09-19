@@ -20,7 +20,7 @@ export default function Compass() {
   // 1. Подключаем кастомные хуки
   const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
   const { heading: alpha, accuracy: compassAccuracy, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
-  const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
+  const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation, replaceLocations } = useLocations();
 
   // Импорт KMZ
   const { parsedPoints, error: kmzError, isLoading: isKmzLoading, parseKMZFile, clearParsedPoints } = useKMZParser();
@@ -29,6 +29,8 @@ export default function Compass() {
   const [newName, setNewName] = useState('');
   const [newCoords, setNewCoords] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
+  // Состояние для показа окна калибровки (все хуки — на верхнем уровне)
+  const [showCalibration, setShowCalibration] = useState(false);
 
   // 3. Вычисления на основе данных из хуков
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
@@ -94,25 +96,29 @@ export default function Compass() {
   };
 
   const handleAddParsedPoints = () => {
-    // Сначала удаляем старые точки с такими же именами
-    parsedPoints.forEach(point => {
-      // Проверяем, есть ли уже точка с таким именем
-      const existingLocation = savedLocations.find(loc => loc.name === point.name);
-      if (existingLocation) 
-        deleteLocation(point.name);
-      
+    // Формируем итоговый список за один проход и применяем одним setState
+    // через replaceLocations — это устраняет проблему батчинга React.
+    const namesToReplace = new Set(parsedPoints.map(p => p.name));
+
+    // Оставляем точки, имена которых не пересекаются с импортируемыми
+    const kept = savedLocations.filter(loc => !namesToReplace.has(loc.name));
+
+    // Добавляем импортируемые точки, разрешая дубликаты имён суффиксом (n)
+    const usedNames = new Set(kept.map(loc => loc.name));
+    const added = parsedPoints.map(point => {
+      let finalName = point.name;
+      let counter = 1;
+      while (usedNames.has(finalName)) {
+        finalName = `${point.name} (${counter})`;
+        counter++;
+      }
+      usedNames.add(finalName);
+      return { name: finalName, lat: point.lat, lon: point.lon };
     });
-    
-    // Затем добавляем новые точки
-    parsedPoints.forEach(point => {
-      addLocation(point.name, point.lat, point.lon);
-    });
-    
+
+    replaceLocations([...kept, ...added]);
     clearParsedPoints();
   };
-
-  // Состояние для показа окна калибровки
-  const [showCalibration, setShowCalibration] = useState(false);
 
   // Кнопка калибровки
   return (
@@ -352,7 +358,7 @@ export default function Compass() {
       )}
 
       {/* Кнопка калибровки */}
-      <div style={{ textAlign: 'center', marginBottom: 15px }}>
+      <div style={{ textAlign: 'center', marginBottom: '15px' }}>
         <button
           onClick={() => setShowCalibration(true)}
           style={{
@@ -420,6 +426,11 @@ export default function Compass() {
           </style>
         </div>
       )}
+
+      {/* Бэйдж с версией */}
+      <div style={versionBadgeStyle}>
+        v{__APP_VERSION__}
+      </div>
     </div>
   );
 }

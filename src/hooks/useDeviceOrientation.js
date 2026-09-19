@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const useDeviceOrientation = () => {
   const [heading, setHeading] = useState(0);
@@ -6,8 +6,10 @@ const useDeviceOrientation = () => {
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [error, setError] = useState(null);
 
-  // Переменные для фильтра координат
-  let previousHeading = 0;
+  // Переменные для фильтра координат храним в ref,
+  // чтобы они не сбрасывались при каждом ре-рендере.
+  const previousHeadingRef = useRef(0);
+  const accuracyRef = useRef(null);
   const smoothingFactor = 0.15; // Чем меньше, тем плавнее (0.1-0.3)
 
   const requestPermission = async () => {
@@ -62,27 +64,31 @@ const useDeviceOrientation = () => {
           newHeading = ((newHeading % 360) + 360) % 360;
           
           // Low-pass filter для плавности
-          const diff = newHeading - previousHeading;
+          const diff = newHeading - previousHeadingRef.current;
           let normalizedDiff = diff;
           if (diff > 180) normalizedDiff -= 360;
           if (diff < -180) normalizedDiff += 360;
           
-          const smoothedHeading = previousHeading + normalizedDiff * smoothingFactor;
-          previousHeading = ((smoothedHeading % 360) + 360) % 360;
+          const smoothedHeading = previousHeadingRef.current + normalizedDiff * smoothingFactor;
+          previousHeadingRef.current = ((smoothedHeading % 360) + 360) % 360;
           
-          setHeading(Math.round(previousHeading * 10) / 10);
+          setHeading(Math.round(previousHeadingRef.current * 10) / 10);
           
           // Логирование источника данных (раз в 2 секунды, чтобы не спамить)
           const now = Date.now();
           if (now - lastDebugTime > 2000) {
-            console.log(`[Compass] Источник: ${source}, heading: ${Math.round(previousHeading)}°, alpha: ${event.alpha}, absolute: ${event.absolute}, webkit: ${event.webkitCompassHeading}`);
+            console.log(`[Compass] Источник: ${source}, heading: ${Math.round(previousHeadingRef.current)}°, alpha: ${event.alpha}, absolute: ${event.absolute}, webkit: ${event.webkitCompassHeading}`);
             lastDebugTime = now;
           }
         }
 
-        // Получаем точность компаса (доступно в iOS)
+        // Получаем точность компаса (доступно в iOS).
+        // Обновляем состояние только при реальном изменении, чтобы не плодить ре-рендеры.
         const acc = event.webkitCompassAccuracy !== undefined ? event.webkitCompassAccuracy : null;
-        setAccuracy(acc);
+        if (acc !== accuracyRef.current) {
+          accuracyRef.current = acc;
+          setAccuracy(acc);
+        }
       };
       
       // Подписываемся на оба события (для совместимости)

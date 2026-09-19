@@ -13,11 +13,17 @@ const useKMZParser = () => {
 
     const coords = geometry.coordinates;
 
-    // Рекурсивно ищем первые два числа в массиве
+    // Рекурсивно ищем первые два числа в массиве.
+    // Поддерживаем как [lon, lat], так и [lon, lat, alt].
     const findFirstNumbers = (arr) => {
       if (Array.isArray(arr)) {
-        // Если это массив чисел (например, lon, lat)
-        if (arr.length === 2 && typeof arr[0] === 'number' && typeof arr[1] === 'number') {
+        if (
+          arr.length >= 2 &&
+          typeof arr[0] === 'number' &&
+          typeof arr[1] === 'number' &&
+          !Array.isArray(arr[0]) &&
+          !Array.isArray(arr[1])
+        ) {
           return { lon: arr[0], lat: arr[1] };
         }
 

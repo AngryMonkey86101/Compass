@@ -49,12 +49,28 @@ const useLocations = () => {
     if (loc) setSelectedLocation(loc);
   };
 
+  // Атомарная замена всего списка точек одним setState.
+  // Нужна для массового импорта (KMZ), чтобы избежать проблем
+  // с батчингом состояния React при вызовах addLocation/deleteLocation в цикле.
+  const replaceLocations = (newList) => {
+    setSavedLocations(newList);
+    // Если выбранная точка исчезла — выбираем первую из нового списка
+    if (!selectedLocation || !newList.some(l => l.name === selectedLocation.name)) {
+      setSelectedLocation(newList.length > 0 ? newList[0] : null);
+    } else {
+      // Обновляем ссылку на выбранную точку (координаты могли измениться)
+      const updated = newList.find(l => l.name === selectedLocation.name);
+      setSelectedLocation(updated);
+    }
+  };
+
   return { 
     savedLocations, 
     selectedLocation, 
     addLocation, 
     deleteLocation, 
-    selectLocation 
+    selectLocation,
+    replaceLocations
   };
 };
 

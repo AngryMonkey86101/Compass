@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Geolocation from '@capacitor/geolocation';
+import { Geolocation } from '@capacitor/geolocation';
 
 const useGeolocationCapacitor = () => {
   const [coords, setCoords] = useState(null);
@@ -11,9 +11,10 @@ const useGeolocationCapacitor = () => {
 
     const startWatching = async () => {
       try {
-        // 1. Запрашиваем нативные разрешения Android/iOS
+        // 1. Запрашиваем нативные разрешения Android/iOS.
+        // На iOS coarseLocation может отсутствовать, поэтому проверяем только location.
         const permission = await Geolocation.requestPermissions();
-        if (permission.location !== 'granted' || permission.coarseLocation !== 'granted') {
+        if (permission.location !== 'granted') {
           setError('Разрешение на использование геолокации отклонено в настройках устройства');
           setIsLoading(false);
           return;

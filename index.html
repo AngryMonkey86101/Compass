@@ -11,13 +11,17 @@
     <!--
       Диагностика запуска. Написано на ES5 без зависимостей, чтобы работать даже там,
       где основной бандл не загрузился или не разобрался. Если за BOOT_TIMEOUT_MS
-      приложение не отрисовалось, показывает пойманные ошибки и данные браузера —
-      вместо белого экрана.
+      приложение не отрисовалось, показывает (и обновляет раз в секунду): пойманные
+      ошибки, выполнился ли скрипт приложения, сколько байт скрипта реально пришло
+      по сети (повторная загрузка с подсчётом), сервис-воркер и данные браузера.
     -->
     <script>
       (function () {
         var BOOT_TIMEOUT_MS = 8000;
+        var STALL_MS = 5000;
+        var startedAt = Date.now();
         var errors = [];
+        var probe = { state: 'не запускалась', received: 0, total: 0, lastProgressAt: 0 };
 
         function remember(text) {
           if (errors.length < 10) errors.push(String(text));
@@ -45,9 +49,102 @@
         }
 
         function escapeHtml(text) {
-          return text.replace(/[&<>"]/g, function (ch) {
+          return String(text).replace(/[&<>"]/g, function (ch) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch];
           });
+        }
+
+        function kb(bytes) {
+          return (bytes / 1024).toFixed(1) + ' КБ';
+        }
+
+        function mainScriptUrl() {
+          var script = document.querySelector('script[type="module"][src]');
+          return script ? script.src : null;
+        }
+
+        // Как браузер грузит основной скрипт: из Resource Timing (есть только после окончания загрузки)
+        function scriptTimingText(url) {
+          if (!url || !window.performance || !performance.getEntriesByName) return 'нет данных';
+          var entries = performance.getEntriesByName(url);
+          if (!entries.length) return 'ещё не загрузился';
+          var e = entries[entries.length - 1];
+          return 'загружен за ' + Math.round(e.duration) + ' мс' +
+            (e.transferSize ? ', ' + kb(e.transferSize) + ' по сети' : '');
+        }
+
+        // Повторно скачиваем основной скрипт и считаем байты: так видно, где загрузка останавливается
+        function startProbe(url) {
+          if (!url || !window.fetch || probe.state !== 'не запускалась') return;
+          probe.state = 'идёт';
+          probe.lastProgressAt = Date.now();
+          fetch(url, { cache: 'no-store' }).then(function (response) {
+            probe.total = Number(response.headers.get('content-length')) || 0;
+            if (!response.body || !response.body.getReader) {
+              return response.arrayBuffer().then(function (buf) {
+                probe.received = buf.byteLength;
+                probe.state = 'завершена';
+              });
+            }
+            var reader = response.body.getReader();
+            function pump() {
+              return reader.read().then(function (chunk) {
+                if (chunk.done) {
+                  probe.state = 'завершена';
+                  return;
+                }
+                probe.received += chunk.value.byteLength;
+                probe.lastProgressAt = Date.now();
+                return pump();
+              });
+            }
+            return pump();
+          }).catch(function (err) {
+            probe.state = 'ошибка: ' + (err && err.message ? err.message : err);
+          });
+        }
+
+        function probeText() {
+          var text = probe.state;
+          if (probe.state === 'не запускалась') return text;
+          text += ' — получено ' + kb(probe.received) + (probe.total ? ' из ' + kb(probe.total) : '');
+          if (probe.state === 'идёт' && Date.now() - probe.lastProgressAt > STALL_MS) {
+            text += '. Загрузка ЗАВИСЛА: данные не приходят ' +
+              Math.round((Date.now() - probe.lastProgressAt) / 1000) + ' с. ' +
+              'Вероятно, сеть или провайдер обрывает соединение с хостингом.';
+          }
+          return text;
+        }
+
+        function clearCacheAndReload() {
+          var tasks = [];
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            tasks.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }));
+          }
+          if (window.caches && caches.keys) {
+            tasks.push(caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            }));
+          }
+          Promise.all(tasks).then(function () { location.reload(); }, function () { location.reload(); });
+        }
+
+        function render(box) {
+          var url = mainScriptUrl();
+          var list = errors.length
+            ? '<ul><li>' + errors.map(escapeHtml).join('</li><li>') + '</li></ul>'
+            : '<p>Ошибок не поймано.</p>';
+          box.querySelector('[data-body]').innerHTML =
+            list +
+            '<p><b>Прошло:</b> ' + Math.round((Date.now() - startedAt) / 1000) + ' с</p>' +
+            '<p><b>Скрипт приложения выполнился:</b> ' + (window.__compassBoot ? 'да (' + escapeHtml(window.__compassBoot) + ')' : 'нет') + '</p>' +
+            '<p><b>Основной скрипт:</b> ' + escapeHtml(scriptTimingText(url)) + '</p>' +
+            '<p><b>Проверка загрузки:</b> ' + escapeHtml(probeText()) + '</p>' +
+            '<p><b>Сервис-воркер:</b> ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'активен' : 'нет') +
+            ' · <b>Сеть:</b> ' + (navigator.onLine ? 'онлайн' : 'офлайн') + '</p>' +
+            '<p><b>Браузер:</b> ' + escapeHtml(navigator.userAgent) + '</p>';
         }
 
         function showDiagnostics() {
@@ -57,24 +154,29 @@
           box.setAttribute('role', 'alert');
           box.style.cssText = 'font:14px/1.4 system-ui,sans-serif;padding:16px;color:#1c1c1e;' +
             'background:#fff;word-wrap:break-word;';
-          var list = errors.length
-            ? '<ul><li>' + errors.map(escapeHtml).join('</li><li>') + '</li></ul>'
-            : '<p>Ошибок не поймано: возможно, страница ещё загружается или скрипт заблокирован.</p>';
           box.innerHTML =
             '<h2 style="font-size:18px;margin:0 0 8px">Приложение не запустилось</h2>' +
-            list +
-            '<p><b>Браузер:</b> ' + escapeHtml(navigator.userAgent) + '</p>' +
-            '<p>Пришлите разработчику скриншот этого экрана.</p>' +
-            '<button type="button" onclick="location.reload()" style="padding:10px 16px;font-size:16px">' +
-            'Перезагрузить</button>';
+            '<div data-body></div>' +
+            '<p>Подождите 20–30 секунд и пришлите разработчику скриншот этого экрана.</p>' +
+            '<button type="button" data-reload style="padding:10px 16px;font-size:16px;margin:0 8px 8px 0">' +
+            'Перезагрузить</button>' +
+            '<button type="button" data-clear style="padding:10px 16px;font-size:16px">' +
+            'Сбросить кэш и перезагрузить</button>';
+          box.querySelector('[data-reload]').onclick = function () { location.reload(); };
+          box.querySelector('[data-clear]').onclick = clearCacheAndReload;
           document.body.appendChild(box);
 
-          // Если приложение всё-таки запустилось позже (медленная сеть), убираем сообщение
+          startProbe(mainScriptUrl());
+          render(box);
+
+          // Обновляем раз в секунду; если приложение всё-таки запустилось (медленная сеть) — убираем
           var timer = setInterval(function () {
             if (isMounted()) {
               clearInterval(timer);
               if (box.parentNode) box.parentNode.removeChild(box);
+              return;
             }
+            render(box);
           }, 1000);
         }
 

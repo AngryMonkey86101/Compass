@@ -27,12 +27,14 @@ npm run lint      # oxlint
 
 ```
 src/
-  components/   Compass, CompassDial, LocationPicker, AddLocationForm, CoordsPanel, ErrorBoundary, UpdatePrompt
-  hooks/        useGeolocation, useDeviceOrientation, useLocations
-  utils/        geoUtils (расстояние, азимут, разбор координат) + тесты
+  components/   Compass, StatusBar, TargetPanel, CompassDial, LocationList, AddLocationForm,
+                CoordsPanel, EventFeed, ErrorBoundary, UpdatePrompt
+  hooks/        useGeolocation, useDeviceOrientation, useLocations, useEventFeed
+  utils/        geoUtils (расстояние, азимут, разбор координат), angle (сглаживание),
+                labels (буквы точек, точность GPS) + тесты
   data/         locations.json — точки по умолчанию
 ```
 
 Версия в интерфейсе берётся из `package.json`.
 
-Анализ найденных проблем и план работ: [problems.md](problems.md).
+Дизайн-система (тактический HUD): [DESIGN.md](DESIGN.md). Анализ найденных проблем и план работ: [problems.md](problems.md).

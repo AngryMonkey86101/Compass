@@ -7,7 +7,7 @@ import useLocations from '../hooks/useLocations';
 export default function Compass() {
   // 1. Подключаем кастомные хуки
   const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
-  const { heading: alpha, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
+  const { unwrappedHeading: alpha, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
   const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
 
   // 2. UI-состояния (остаются в компоненте)
@@ -17,7 +17,7 @@ export default function Compass() {
 
   // 3. Вычисления на основе данных из хуков
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
-  const rotation = (Number(bearing) - Number(alpha)) % 360;
+  const rotation = bearing - alpha;
   const distance = coords && selectedLocation ? calculateDistance(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 'Нет точки';
 
   // 4. Обработчики событий
@@ -166,7 +166,7 @@ export default function Compass() {
               <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e5e5ea" strokeWidth="2" />
               <circle cx="50" cy="50" r="35" fill="none" stroke="#f2f2f7" strokeWidth="1" />
               
-              <text x="50" y="16" textAnchor="middle" fill="#FF3B30" fontSize="12" fontWeight="bold">С</text>
+              <text x="50" y="16" textAnchor="middle" fill="#FF3B30" fontSize="12" fontWeight="bold">N</text>
               <text x="88" y="54" textAnchor="middle" fill="#8e8e93" fontSize="10" fontWeight="bold">E</text>
               <text x="50" y="91" textAnchor="middle" fill="#8e8e93" fontSize="10" fontWeight="bold">S</text>
               <text x="12" y="54" textAnchor="middle" fill="#8e8e93" fontSize="10" fontWeight="bold">W</text>

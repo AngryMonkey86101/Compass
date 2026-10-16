@@ -12,11 +12,11 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
   const distance = R * c; // Расстояние в километрах
 
-  if (distance < 1) {
-    return `${Math.round(distance * 1000)} м`;
-  } else {
-    return `${distance.toFixed(1)} км`;
+  const meters = Math.round(distance * 1000);
+  if (meters < 1000) {
+    return `${meters} м`;
   }
+  return `${distance.toFixed(1)} км`;
 }
 
 function calculateBearing(lat1, lon1, lat2, lon2) {

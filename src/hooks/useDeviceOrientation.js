@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const useDeviceOrientation = () => {
   const [heading, setHeading] = useState(0);
+  // Накопленный угол без сброса на 360°: нужен, чтобы CSS-переход шёл по кратчайшей дуге
+  const [unwrappedHeading, setUnwrappedHeading] = useState(0);
+  const unwrappedRef = useRef(null);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,7 +36,16 @@ const useDeviceOrientation = () => {
 
         if (newHeading < 0) newHeading += 360;
 
-        setHeading(Math.round(newHeading * 10) / 10);
+        newHeading = Math.round(newHeading * 10) / 10;
+        setHeading(newHeading);
+
+        if (unwrappedRef.current === null) {
+          unwrappedRef.current = newHeading;
+        } else {
+          const delta = ((newHeading - unwrappedRef.current) % 360 + 540) % 360 - 180;
+          unwrappedRef.current += delta;
+        }
+        setUnwrappedHeading(unwrappedRef.current);
       };
 
       window.addEventListener('deviceorientationabsolute', handleOrientation, true);
@@ -48,7 +60,7 @@ const useDeviceOrientation = () => {
     };
   }, [isPermissionGranted]);
 
-  return { heading, isPermissionGranted, requestPermission, error };
+  return { heading, unwrappedHeading, isPermissionGranted, requestPermission, error };
 };
 
 export default useDeviceOrientation;

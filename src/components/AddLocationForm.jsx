@@ -1,12 +1,13 @@
 import { useState, useId } from 'react';
 import { parseCoordinates } from '../utils/geoUtils';
 
-export default function AddLocationForm({ onAdd }) {
+export default function AddLocationForm({ onAdd, onCancel }) {
   const [name, setName] = useState('');
   const [coords, setCoords] = useState('');
   const [error, setError] = useState('');
   const nameId = useId();
   const coordsId = useId();
+  const errorId = useId();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,20 +29,24 @@ export default function AddLocationForm({ onAdd }) {
   };
 
   return (
-    <form className="card" onSubmit={handleSubmit} noValidate>
-      <p className="card__title">Новая точка</p>
-      <label htmlFor={nameId} className="visually-hidden">Название</label>
+    <form className="form" onSubmit={handleSubmit} noValidate aria-label="Новая точка">
+      <label htmlFor={nameId} className="label field-label">Название</label>
       <input
-        id={nameId} className="field" type="text" placeholder="Название (напр. Дом)"
-        value={name} onChange={(e) => setName(e.target.value)}
+        id={nameId} className="field" type="text" placeholder="Например, Дом"
+        value={name} onChange={(e) => setName(e.target.value)} autoFocus
+        aria-describedby={error ? errorId : undefined}
       />
-      <label htmlFor={coordsId} className="visually-hidden">Широта и долгота</label>
+      <label htmlFor={coordsId} className="label field-label">Широта, долгота</label>
       <input
-        id={coordsId} className="field" type="text" placeholder="Широта, Долгота"
+        id={coordsId} className="field field--mono" type="text" placeholder="55.7535, 37.6210"
         inputMode="text" value={coords} onChange={(e) => setCoords(e.target.value)}
+        aria-describedby={error ? errorId : undefined}
       />
-      {error && <p role="alert" className="error">{error}</p>}
-      <button type="submit" className="btn">Добавить</button>
+      {error && <p id={errorId} role="alert" className="error">{error}</p>}
+      <div className="btn-row">
+        <button type="submit" className="btn">Добавить</button>
+        <button type="button" className="btn btn--secondary" onClick={onCancel}>Отмена</button>
+      </div>
     </form>
   );
 }

@@ -15,10 +15,13 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children;
     return (
       <main className="app">
-        <p role="alert" className="error">Что-то пошло не так.</p>
-        <button type="button" className="btn btn--large" onClick={() => window.location.reload()}>
-          Перезагрузить
-        </button>
+        <section className="panel panel--active fatal" role="alert">
+          <h1 className="label tone-danger">Сбой приложения</h1>
+          <p className="empty">Что-то пошло не так. Сохранённые точки не пострадали.</p>
+          <button type="button" className="btn btn--block" onClick={() => window.location.reload()}>
+            Перезагрузить
+          </button>
+        </section>
       </main>
     );
   }

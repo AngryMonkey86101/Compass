@@ -25,8 +25,8 @@ export default defineConfig({
         name: "Навигатор",
         short_name: "Компас",
         description: "Оффлайн GPS навигатор",
-        theme_color: "#e0eafc",
-        background_color: "#cfdef3",
+        theme_color: "#0d1820",
+        background_color: "#0d1820",
         display: "standalone",
         icons: [
           {

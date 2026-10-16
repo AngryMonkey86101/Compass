@@ -11,7 +11,7 @@ export default function UpdatePrompt() {
   return (
     <div className="update-banner" role="status">
       Доступна новая версия
-      <button type="button" onClick={() => updateServiceWorker(true)}>Обновить</button>
+      <button type="button" className="btn" onClick={() => updateServiceWorker(true)}>Обновить</button>
     </div>
   );
 }

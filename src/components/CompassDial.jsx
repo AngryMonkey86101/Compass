@@ -8,12 +8,39 @@ const SETTLE_DEG = 0.05;
 // Защита от огромного шага после того, как вкладка была в фоне
 const MAX_FRAME_MS = 100;
 
+// Геометрия шкалы в системе координат 300×300, центр (150, 150). Строится один раз.
+const C = 150;
+const point = (deg, r) => {
+  const t = (deg * Math.PI) / 180;
+  return `${(C + r * Math.sin(t)).toFixed(1)} ${(C - r * Math.cos(t)).toFixed(1)}`;
+};
+const buildTicks = (filter, inner) => {
+  let d = '';
+  for (let deg = 0; deg < 360; deg += 5) {
+    if (filter(deg)) d += `M${point(deg, inner)}L${point(deg, 140)}`;
+  }
+  return d;
+};
+const MINOR_TICKS = buildTicks((deg) => deg % 30 !== 0, 133);
+const MAJOR_TICKS = buildTicks((deg) => deg % 30 === 0 && deg !== 0, 124);
+const NUMBER_LABELS = [30, 60, 120, 150, 210, 240, 300, 330].map((deg) => {
+  const [x, y] = point(deg, 108).split(' ').map(Number);
+  return { deg, x, y: y + 4 };
+});
+
+const formatHeading = (deg) => `${String(Math.round(((deg % 360) + 360) % 360) % 360).padStart(3, '0')}°`;
+
 // subscribeHeading — подписка на сырой азимут устройства (из useDeviceOrientation),
-// bearing — азимут на выбранную точку (null, пока неизвестно местоположение).
-// Повороты применяются напрямую к DOM в requestAnimationFrame, без перерисовки React.
-function CompassDial({ subscribeHeading, bearing }) {
+// bearing — азимут на выбранную точку (null, пока неизвестно местоположение),
+// targetLabel — буква выбранной точки для маркера на кольце.
+// Все повороты применяются напрямую к DOM в requestAnimationFrame через transform, без перерисовки React
+// и без CSS-фильтров на вращающихся слоях — иначе на iOS возвращаются рывки.
+function CompassDial({ subscribeHeading, bearing, targetLabel }) {
   const faceRef = useRef(null);
   const arrowRef = useRef(null);
+  const orbitRef = useRef(null);
+  const orbitMarkerRef = useRef(null);
+  const headingTextRef = useRef(null);
   const bearingRef = useRef(bearing);
   const wakeRef = useRef(() => {});
 
@@ -21,6 +48,7 @@ function CompassDial({ subscribeHeading, bearing }) {
     let targetHeading = null;
     let shownHeading = null;
     let shownBearing = null;
+    let shownHeadingText = '';
     let frameId = 0;
     let lastTime = 0;
 
@@ -29,9 +57,17 @@ function CompassDial({ subscribeHeading, bearing }) {
       if (faceRef.current) {
         faceRef.current.style.transform = `rotate(${-heading}deg)`;
       }
-      if (arrowRef.current && shownBearing !== null) {
-        arrowRef.current.style.transform =
-          `translate(-50%, -50%) rotate(${shownBearing - heading}deg)`;
+      if (shownBearing !== null) {
+        const relative = shownBearing - heading;
+        if (arrowRef.current) arrowRef.current.style.transform = `rotate(${relative}deg)`;
+        if (orbitRef.current) orbitRef.current.style.transform = `rotate(${relative}deg)`;
+        // Маркер держит букву прямо, компенсируя поворот орбиты
+        if (orbitMarkerRef.current) orbitMarkerRef.current.style.transform = `rotate(${-relative}deg)`;
+      }
+      const text = shownHeading === null ? '—' : formatHeading(shownHeading);
+      if (text !== shownHeadingText && headingTextRef.current) {
+        headingTextRef.current.textContent = text;
+        shownHeadingText = text;
       }
     };
 
@@ -86,38 +122,67 @@ function CompassDial({ subscribeHeading, bearing }) {
     wakeRef.current();
   }, [bearing]);
 
+  const hidden = bearing === null;
+
   return (
-    <div className="dial">
-      <svg
-        ref={faceRef}
-        className="dial__face"
-        viewBox="0 0 100 100"
-        role="img"
-        aria-label="Циферблат компаса"
-      >
-        <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#e5e5ea" strokeWidth="2" />
-        <circle cx="50" cy="50" r="35" fill="none" stroke="#f2f2f7" strokeWidth="1" />
+    <div className="dial-section">
+      <div className="dial-stage">
+        <span className="dial-section__crosshair-h" aria-hidden="true" />
+        <span className="dial-section__crosshair-v" aria-hidden="true" />
 
-        <text x="50" y="16" textAnchor="middle" fill="#d70015" fontSize="12" fontWeight="bold">N</text>
-        <text x="88" y="54" textAnchor="middle" fill="#6c6c70" fontSize="10" fontWeight="bold">E</text>
-        <text x="50" y="91" textAnchor="middle" fill="#6c6c70" fontSize="10" fontWeight="bold">S</text>
-        <text x="12" y="54" textAnchor="middle" fill="#6c6c70" fontSize="10" fontWeight="bold">W</text>
+        <div className="dial">
+          <svg className="dial__base" viewBox="0 0 300 300" aria-hidden="true">
+            <circle cx="150" cy="150" r="148" fill="#13222c" fillOpacity="0.9" stroke="rgba(190,210,222,0.35)" strokeWidth="1" />
+            <circle cx="150" cy="150" r="96" fill="none" stroke="rgba(190,210,222,0.18)" strokeWidth="1" strokeDasharray="2 4" />
+          </svg>
 
-        <line x1="50" y1="2" x2="50" y2="7" stroke="#d70015" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="98" y1="50" x2="93" y2="50" stroke="#c7c7cc" strokeWidth="2" strokeLinecap="round" />
-        <line x1="50" y1="98" x2="50" y2="93" stroke="#c7c7cc" strokeWidth="2" strokeLinecap="round" />
-        <line x1="2" y1="50" x2="7" y2="50" stroke="#c7c7cc" strokeWidth="2" strokeLinecap="round" />
-      </svg>
+          <svg ref={faceRef} className="dial__face" viewBox="0 0 300 300" role="img" aria-label="Шкала компаса">
+            <path d={MINOR_TICKS} stroke="rgba(190,210,222,0.45)" strokeWidth="1" fill="none" />
+            <path d={MAJOR_TICKS} stroke="#c9d6de" strokeWidth="1.5" fill="none" />
+            <path d={`M${point(0, 124)}L${point(0, 140)}`} stroke="#f28b6e" strokeWidth="2.5" fill="none" />
+            <g fontFamily="'Fira Sans Condensed', sans-serif" fontWeight="700" textAnchor="middle">
+              <text x="150" y="46" fontSize="17" fill="#f28b6e">N</text>
+              <text x="258" y="154" fontSize="15" fill="#e6eef2">E</text>
+              <text x="150" y="262" fontSize="15" fill="#e6eef2">S</text>
+              <text x="42" y="154" fontSize="15" fill="#e6eef2">W</text>
+            </g>
+            <g fontFamily="'JetBrains Mono', monospace" fontSize="10" fill="#9fb1bd" textAnchor="middle">
+              {NUMBER_LABELS.map(({ deg, x, y }) => (
+                <text key={deg} x={x} y={y}>{deg}</text>
+              ))}
+            </g>
+          </svg>
 
-      <div
-        ref={arrowRef}
-        className={`dial__arrow${bearing === null ? ' dial__arrow--hidden' : ''}`}
-      >
-        <svg viewBox="0 0 24 24" role="img" aria-label="Стрелка направления на выбранную точку">
-          {/* Тень нарисована в SVG: CSS-фильтр на вращающемся слое пересчитывался бы каждый кадр */}
-          <path d="M12 3.2L3 21.2l9-5 9 5z" fill="rgba(0, 122, 255, 0.18)" />
-          <path d="M12 2L3 20l9-5 9 5z" fill="#007AFF" />
-        </svg>
+          <svg className="dial__lubber" viewBox="0 0 300 300" aria-hidden="true">
+            <path d="M150 3L144 13H156Z" fill="#e6eef2" />
+          </svg>
+
+          <svg
+            ref={arrowRef}
+            className={`dial__arrow${hidden ? ' dial__arrow--hidden' : ''}`}
+            viewBox="0 0 300 300"
+            role="img"
+            aria-label="Стрелка направления на выбранную точку"
+          >
+            <path d="M150 54L128 186L150 170L172 186Z" fill="#4fc3f7" />
+            <path d="M150 54L150 170L172 186Z" fill="#000000" fillOpacity="0.18" />
+            <circle cx="150" cy="150" r="5" fill="#0d1820" stroke="#e6eef2" strokeWidth="1.5" />
+          </svg>
+
+          <div ref={orbitRef} className={`dial__orbit${hidden ? ' dial__orbit--hidden' : ''}`} aria-hidden="true">
+            <svg ref={orbitMarkerRef} className="dial__orbit-marker" viewBox="0 0 32 32">
+              <rect x="7" y="7" width="18" height="18" transform="rotate(45 16 16)" fill="#0d1820" stroke="#f28b6e" strokeWidth="2" />
+              <text x="16" y="20.5" fontFamily="'Fira Sans Condensed', sans-serif" fontSize="12" fontWeight="700" fill="#f28b6e" textAnchor="middle">
+                {targetLabel}
+              </text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div className="dial__readout">
+        <span className="label">Курс</span>
+        <span ref={headingTextRef} className="dial__heading mono">—</span>
       </div>
     </div>
   );

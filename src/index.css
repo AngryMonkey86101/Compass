@@ -141,29 +141,41 @@ select.field {
   width: 260px;
   height: 260px;
   margin: 0 auto 20px;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+}
+
+/* Неподвижная подложка с тенью: тень не пересчитывается при вращении */
+.dial::before {
+  content: "";
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  right: 2%;
+  bottom: 2%;
+  border-radius: 50%;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .dial__face {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  transition: transform 0.1s ease;
+  will-change: transform;
 }
 
 .dial__arrow {
   position: absolute;
   top: 50%;
   left: 50%;
-  transition: transform 0.1s ease;
+  transform: translate(-50%, -50%);
+  will-change: transform;
 }
 
 .dial__arrow svg {
   display: block;
   width: 150px;
   height: 150px;
-  filter: drop-shadow(0 6px 8px rgba(0, 122, 255, 0.3));
 }
 
 .dial__arrow--hidden {

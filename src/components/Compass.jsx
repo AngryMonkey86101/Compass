@@ -10,7 +10,7 @@ import CoordsPanel from './CoordsPanel';
 
 export default function Compass() {
   const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
-  const { unwrappedHeading, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
+  const { subscribe: subscribeHeading, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
   const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
 
   // Пересчитываем только при изменении позиции или выбранной точки, а не при каждом повороте
@@ -44,7 +44,7 @@ export default function Compass() {
       {selectedLocation ? (
         <>
           <p className="distance">Дистанция: {distance}</p>
-          <CompassDial heading={unwrappedHeading} bearing={bearing} />
+          <CompassDial subscribeHeading={subscribeHeading} bearing={bearing} />
         </>
       ) : (
         <p className="muted">Добавьте точку для навигации</p>

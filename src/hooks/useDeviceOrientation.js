@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
 
@@ -10,23 +10,38 @@ const getScreenAngle = () => {
   return isNumber(window.orientation) ? window.orientation : 0;
 };
 
-const MIN_CHANGE_DEG = 1;
-
 const normalize = (angle) => ((angle % 360) + 360) % 360;
 
+// Направление не хранится в React-состоянии: датчик присылает до ~60 значений
+// в секунду, и перерисовка на каждое давала рывки. Вместо этого подписчики
+// (циферблат) получают сырое значение и сами плавно анимируют его.
 const useDeviceOrientation = () => {
-  // Накопленный угол без сброса на 360°: нужен, чтобы CSS-переход шёл по кратчайшей дуге
-  const [unwrappedHeading, setUnwrappedHeading] = useState(0);
-  const unwrappedRef = useRef(null);
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [error, setError] = useState(null);
+  const errorRef = useRef(null);
+  const listenersRef = useRef(new Set());
+  const lastHeadingRef = useRef(null);
+
+  const updateError = useCallback((message) => {
+    if (errorRef.current === message) return;
+    errorRef.current = message;
+    setError(message);
+  }, []);
+
+  // callback(heading) вызывается на каждое значение датчика; возвращает отписку
+  const subscribe = useCallback((callback) => {
+    const listeners = listenersRef.current;
+    listeners.add(callback);
+    if (lastHeadingRef.current !== null) callback(lastHeadingRef.current);
+    return () => listeners.delete(callback);
+  }, []);
 
   // Можно вызывать повторно после отказа или ошибки
   const requestPermission = async () => {
-    setError(null);
+    updateError(null);
 
     if (typeof DeviceOrientationEvent === 'undefined') {
-      setError('Датчики ориентации не поддерживаются на этом устройстве');
+      updateError('Датчики ориентации не поддерживаются на этом устройстве');
       return;
     }
 
@@ -40,10 +55,10 @@ const useDeviceOrientation = () => {
       if (permissionState === 'granted') {
         setIsPermissionGranted(true);
       } else {
-        setError('Разрешение на использование датчиков отклонено');
+        updateError('Разрешение на использование датчиков отклонено');
       }
     } catch (err) {
-      setError(`Ошибка при запросе разрешений: ${err.message}`);
+      updateError(`Ошибка при запросе разрешений: ${err.message}`);
     }
   };
 
@@ -57,26 +72,6 @@ const useDeviceOrientation = () => {
       ? 'deviceorientationabsolute'
       : 'deviceorientation';
 
-    // События приходят до ~60 раз в секунду: применяем не чаще одного раза за кадр
-    // и пропускаем изменения меньше MIN_CHANGE_DEG, чтобы не перерисовывать зря
-    let pendingHeading = null;
-    let frameId = 0;
-
-    const commitHeading = () => {
-      frameId = 0;
-      const next = pendingHeading;
-      if (next === null) return;
-
-      if (unwrappedRef.current === null) {
-        unwrappedRef.current = next;
-      } else {
-        const delta = ((next - unwrappedRef.current) % 360 + 540) % 360 - 180;
-        if (Math.abs(delta) < MIN_CHANGE_DEG) return;
-        unwrappedRef.current += delta;
-      }
-      setUnwrappedHeading(unwrappedRef.current);
-    };
-
     const handleOrientation = (event) => {
       let deviceHeading;
 
@@ -84,7 +79,7 @@ const useDeviceOrientation = () => {
         deviceHeading = event.webkitCompassHeading; // iOS
       } else if (isNumber(event.alpha)) {
         if (eventName === 'deviceorientation' && event.absolute === false) {
-          setError('Датчик не определяет направление на север');
+          updateError('Датчик не определяет направление на север');
           return;
         }
         deviceHeading = 360 - event.alpha;
@@ -92,19 +87,17 @@ const useDeviceOrientation = () => {
         return; // событие без данных об ориентации
       }
 
-      setError(null);
-      pendingHeading = Math.round(normalize(deviceHeading + getScreenAngle()) * 10) / 10;
-      if (!frameId) frameId = requestAnimationFrame(commitHeading);
+      updateError(null);
+      const heading = normalize(deviceHeading + getScreenAngle());
+      lastHeadingRef.current = heading;
+      listenersRef.current.forEach((callback) => callback(heading));
     };
 
     window.addEventListener(eventName, handleOrientation, true);
-    return () => {
-      window.removeEventListener(eventName, handleOrientation, true);
-      if (frameId) cancelAnimationFrame(frameId);
-    };
-  }, [isPermissionGranted]);
+    return () => window.removeEventListener(eventName, handleOrientation, true);
+  }, [isPermissionGranted, updateError]);
 
-  return { heading: normalize(unwrappedHeading), unwrappedHeading, isPermissionGranted, requestPermission, error };
+  return { subscribe, isPermissionGranted, requestPermission, error };
 };
 
 export default useDeviceOrientation;

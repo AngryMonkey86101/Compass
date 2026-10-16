@@ -1,5 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 
+const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+
+// Поворот экрана относительно естественной ориентации устройства (0, 90, 180, 270)
+const getScreenAngle = () => {
+  if (typeof screen !== 'undefined' && isNumber(screen.orientation?.angle)) {
+    return screen.orientation.angle;
+  }
+  return isNumber(window.orientation) ? window.orientation : 0;
+};
+
+const normalize = (angle) => ((angle % 360) + 360) % 360;
+
 const useDeviceOrientation = () => {
   const [heading, setHeading] = useState(0);
   // Накопленный угол без сброса на 360°: нужен, чтобы CSS-переход шёл по кратчайшей дуге
@@ -8,56 +20,72 @@ const useDeviceOrientation = () => {
   const [isPermissionGranted, setIsPermissionGranted] = useState(false);
   const [error, setError] = useState(null);
 
+  // Можно вызывать повторно после отказа или ошибки
   const requestPermission = async () => {
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      try {
-        const permissionState = await DeviceOrientationEvent.requestPermission();
-        if (permissionState === 'granted') {
-          setIsPermissionGranted(true);
-        } else {
-          setError('Разрешение на использование датчиков отклонено');
-        }
-      } catch (error) {
-        setError(`Ошибка при запросе разрешений: ${error.message}`);
-      }
-    } else {
+    setError(null);
+
+    if (typeof DeviceOrientationEvent === 'undefined') {
+      setError('Датчики ориентации не поддерживаются на этом устройстве');
+      return;
+    }
+
+    if (typeof DeviceOrientationEvent.requestPermission !== 'function') {
       setIsPermissionGranted(true);
+      return;
+    }
+
+    try {
+      const permissionState = await DeviceOrientationEvent.requestPermission();
+      if (permissionState === 'granted') {
+        setIsPermissionGranted(true);
+      } else {
+        setError('Разрешение на использование датчиков отклонено');
+      }
+    } catch (err) {
+      setError(`Ошибка при запросе разрешений: ${err.message}`);
     }
   };
 
   useEffect(() => {
-    let handleOrientation = null;
+    if (!isPermissionGranted) return undefined;
 
-    if (isPermissionGranted) {
-      handleOrientation = (event) => {
-        let newHeading = event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null
-          ? event.webkitCompassHeading
-          : (event.alpha !== undefined && event.alpha !== null ? 360 - event.alpha : 0);
+    // Android (Chrome) отдаёт направление на север в deviceorientationabsolute;
+    // обычное deviceorientation там относительное и не годится для компаса.
+    // Подписываемся только на одно событие, чтобы они не перебивали друг друга.
+    const eventName = 'ondeviceorientationabsolute' in window
+      ? 'deviceorientationabsolute'
+      : 'deviceorientation';
 
-        if (newHeading < 0) newHeading += 360;
+    const handleOrientation = (event) => {
+      let deviceHeading;
 
-        newHeading = Math.round(newHeading * 10) / 10;
-        setHeading(newHeading);
-
-        if (unwrappedRef.current === null) {
-          unwrappedRef.current = newHeading;
-        } else {
-          const delta = ((newHeading - unwrappedRef.current) % 360 + 540) % 360 - 180;
-          unwrappedRef.current += delta;
+      if (isNumber(event.webkitCompassHeading)) {
+        deviceHeading = event.webkitCompassHeading; // iOS
+      } else if (isNumber(event.alpha)) {
+        if (eventName === 'deviceorientation' && event.absolute === false) {
+          setError('Датчик не определяет направление на север');
+          return;
         }
-        setUnwrappedHeading(unwrappedRef.current);
-      };
-
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-      window.addEventListener('deviceorientation', handleOrientation, true);
-    }
-
-    return () => {
-      if (handleOrientation) {
-        window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
-        window.removeEventListener('deviceorientation', handleOrientation, true);
+        deviceHeading = 360 - event.alpha;
+      } else {
+        return; // событие без данных об ориентации
       }
+
+      setError(null);
+      const newHeading = Math.round(normalize(deviceHeading + getScreenAngle()) * 10) / 10;
+      setHeading(newHeading);
+
+      if (unwrappedRef.current === null) {
+        unwrappedRef.current = newHeading;
+      } else {
+        const delta = ((newHeading - unwrappedRef.current) % 360 + 540) % 360 - 180;
+        unwrappedRef.current += delta;
+      }
+      setUnwrappedHeading(unwrappedRef.current);
     };
+
+    window.addEventListener(eventName, handleOrientation, true);
+    return () => window.removeEventListener(eventName, handleOrientation, true);
   }, [isPermissionGranted]);
 
   return { heading, unwrappedHeading, isPermissionGranted, requestPermission, error };

@@ -13,7 +13,6 @@ export default function Compass() {
   // 2. UI-состояния (остаются в компоненте)
   const [newName, setNewName] = useState('');
   const [newCoords, setNewCoords] = useState('');
-  const [debugInfo, setDebugInfo] = useState('');
   const [formError, setFormError] = useState('');
 
   // 3. Вычисления на основе данных из хуков
@@ -50,14 +49,6 @@ export default function Compass() {
   const handleDeleteLocation = () => {
     if (!selectedLocation) return;
     deleteLocation(selectedLocation.id);
-  };
-
-  const enableSensors = async () => {
-    try {
-      await requestPermission();
-    } catch (err) {
-      setDebugInfo(`Ошибка при запросе разрешений: ${err.message}`);
-    }
   };
 
   // 5. Стили и утилиты (объявлены до return)
@@ -125,7 +116,7 @@ export default function Compass() {
       
       {!isPermissionGranted && (
         <button
-          onClick={enableSensors}
+          onClick={requestPermission}
           style={{ ...buttonStyle, marginTop: '20px', fontSize: '18px' }}
         >
           Включить компас
@@ -236,8 +227,6 @@ export default function Compass() {
         </p>
       )}
       
-      {debugInfo && <p style={{ fontSize: '12px', color: '#8e8e93', marginTop: '10px' }}>{debugInfo}</p>}
-
       <p style={versionBadgeStyle}>Alpha v1.0.0</p>
     </div>
   );

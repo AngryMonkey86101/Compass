@@ -8,9 +8,87 @@
     <meta name="theme-color" content="#e0eafc" />
     <meta name="description" content="Оффлайн GPS-навигатор: стрелка указывает на выбранную точку" />
     <title>Компас</title>
+    <!--
+      Диагностика запуска. Написано на ES5 без зависимостей, чтобы работать даже там,
+      где основной бандл не загрузился или не разобрался. Если за BOOT_TIMEOUT_MS
+      приложение не отрисовалось, показывает пойманные ошибки и данные браузера —
+      вместо белого экрана.
+    -->
+    <script>
+      (function () {
+        var BOOT_TIMEOUT_MS = 8000;
+        var errors = [];
+
+        function remember(text) {
+          if (errors.length < 10) errors.push(String(text));
+        }
+
+        // capture: true — чтобы ловить и ошибки загрузки <script>/<link>, а не только исключения
+        window.addEventListener('error', function (event) {
+          var target = event.target;
+          if (target && target !== window && (target.src || target.href)) {
+            remember('Не загрузился файл: ' + (target.src || target.href));
+          } else {
+            remember((event.message || 'Ошибка') +
+              (event.filename ? ' (' + event.filename + ':' + event.lineno + ')' : ''));
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (event) {
+          var reason = event.reason;
+          remember('Необработанный промис: ' + (reason && reason.message ? reason.message : reason));
+        });
+
+        function isMounted() {
+          var root = document.getElementById('root');
+          return root && root.children.length > 0;
+        }
+
+        function escapeHtml(text) {
+          return text.replace(/[&<>"]/g, function (ch) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch];
+          });
+        }
+
+        function showDiagnostics() {
+          if (isMounted() || document.getElementById('boot-diagnostics')) return;
+          var box = document.createElement('div');
+          box.id = 'boot-diagnostics';
+          box.setAttribute('role', 'alert');
+          box.style.cssText = 'font:14px/1.4 system-ui,sans-serif;padding:16px;color:#1c1c1e;' +
+            'background:#fff;word-wrap:break-word;';
+          var list = errors.length
+            ? '<ul><li>' + errors.map(escapeHtml).join('</li><li>') + '</li></ul>'
+            : '<p>Ошибок не поймано: возможно, страница ещё загружается или скрипт заблокирован.</p>';
+          box.innerHTML =
+            '<h2 style="font-size:18px;margin:0 0 8px">Приложение не запустилось</h2>' +
+            list +
+            '<p><b>Браузер:</b> ' + escapeHtml(navigator.userAgent) + '</p>' +
+            '<p>Пришлите разработчику скриншот этого экрана.</p>' +
+            '<button type="button" onclick="location.reload()" style="padding:10px 16px;font-size:16px">' +
+            'Перезагрузить</button>';
+          document.body.appendChild(box);
+
+          // Если приложение всё-таки запустилось позже (медленная сеть), убираем сообщение
+          var timer = setInterval(function () {
+            if (isMounted()) {
+              clearInterval(timer);
+              if (box.parentNode) box.parentNode.removeChild(box);
+            }
+          }, 1000);
+        }
+
+        setTimeout(showDiagnostics, BOOT_TIMEOUT_MS);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <script nomodule>
+      document.getElementById('root').innerHTML =
+        '<p style="font:16px system-ui,sans-serif;padding:16px">' +
+        'Браузер устарел и не может запустить приложение. Обновите Chrome или Android System WebView.</p>';
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

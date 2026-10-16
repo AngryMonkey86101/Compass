@@ -6,6 +6,11 @@ import { readFileSync } from "node:fs";
 const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
 export default defineConfig({
+  build: {
+    // По умолчанию Vite 8 собирает под Chrome 111+ / Safari 16.4+. Понижаем цель,
+    // чтобы приложение запускалось и в необновлённых Chrome/WebView на Android
+    target: ["es2019", "chrome73", "safari13", "firefox68", "edge79"]
+  },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(version)
   },

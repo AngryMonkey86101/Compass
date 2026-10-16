@@ -10,10 +10,11 @@ const getScreenAngle = () => {
   return isNumber(window.orientation) ? window.orientation : 0;
 };
 
+const MIN_CHANGE_DEG = 1;
+
 const normalize = (angle) => ((angle % 360) + 360) % 360;
 
 const useDeviceOrientation = () => {
-  const [heading, setHeading] = useState(0);
   // Накопленный угол без сброса на 360°: нужен, чтобы CSS-переход шёл по кратчайшей дуге
   const [unwrappedHeading, setUnwrappedHeading] = useState(0);
   const unwrappedRef = useRef(null);
@@ -56,6 +57,26 @@ const useDeviceOrientation = () => {
       ? 'deviceorientationabsolute'
       : 'deviceorientation';
 
+    // События приходят до ~60 раз в секунду: применяем не чаще одного раза за кадр
+    // и пропускаем изменения меньше MIN_CHANGE_DEG, чтобы не перерисовывать зря
+    let pendingHeading = null;
+    let frameId = 0;
+
+    const commitHeading = () => {
+      frameId = 0;
+      const next = pendingHeading;
+      if (next === null) return;
+
+      if (unwrappedRef.current === null) {
+        unwrappedRef.current = next;
+      } else {
+        const delta = ((next - unwrappedRef.current) % 360 + 540) % 360 - 180;
+        if (Math.abs(delta) < MIN_CHANGE_DEG) return;
+        unwrappedRef.current += delta;
+      }
+      setUnwrappedHeading(unwrappedRef.current);
+    };
+
     const handleOrientation = (event) => {
       let deviceHeading;
 
@@ -72,23 +93,18 @@ const useDeviceOrientation = () => {
       }
 
       setError(null);
-      const newHeading = Math.round(normalize(deviceHeading + getScreenAngle()) * 10) / 10;
-      setHeading(newHeading);
-
-      if (unwrappedRef.current === null) {
-        unwrappedRef.current = newHeading;
-      } else {
-        const delta = ((newHeading - unwrappedRef.current) % 360 + 540) % 360 - 180;
-        unwrappedRef.current += delta;
-      }
-      setUnwrappedHeading(unwrappedRef.current);
+      pendingHeading = Math.round(normalize(deviceHeading + getScreenAngle()) * 10) / 10;
+      if (!frameId) frameId = requestAnimationFrame(commitHeading);
     };
 
     window.addEventListener(eventName, handleOrientation, true);
-    return () => window.removeEventListener(eventName, handleOrientation, true);
+    return () => {
+      window.removeEventListener(eventName, handleOrientation, true);
+      if (frameId) cancelAnimationFrame(frameId);
+    };
   }, [isPermissionGranted]);
 
-  return { heading, unwrappedHeading, isPermissionGranted, requestPermission, error };
+  return { heading: normalize(unwrappedHeading), unwrappedHeading, isPermissionGranted, requestPermission, error };
 };
 
 export default useDeviceOrientation;

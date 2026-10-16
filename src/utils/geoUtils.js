@@ -1,22 +1,23 @@
+const EARTH_RADIUS_KM = 6371;
+const toRadians = (deg) => (deg * Math.PI) / 180;
+
+// Расстояние по дуге большого круга (формула гаверсинусов), в километрах
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Радиус Земли в километрах
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
 
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2;
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
-  const distance = R * c; // Расстояние в километрах
-
-  const meters = Math.round(distance * 1000);
-  if (meters < 1000) {
-    return `${meters} м`;
-  }
-  return `${distance.toFixed(1)} км`;
+// Человекочитаемая строка: «997 м» или «12.3 км»
+function formatDistance(km) {
+  const meters = Math.round(km * 1000);
+  if (meters < 1000) return `${meters} м`;
+  return `${km.toFixed(1)} км`;
 }
 
 function calculateBearing(lat1, lon1, lat2, lon2) {
@@ -26,13 +27,8 @@ function calculateBearing(lat1, lon1, lat2, lon2) {
   const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
            Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
 
-  let bearing = Math.atan2(y, x) * 180 / Math.PI;
-
-  if (bearing < 0) {
-    bearing += 360;
-  }
-
-  return bearing;
+  // % 360 нужен и для исключения результата ровно 360 из-за погрешности округления
+  return (((Math.atan2(y, x) * 180) / Math.PI) + 360) % 360;
 }
 
 function isValidCoordinates(lat, lon) {
@@ -60,4 +56,4 @@ function parseCoordinates(input) {
   return { lat, lon };
 }
 
-export { calculateDistance, calculateBearing, isValidCoordinates, parseCoordinates };
+export { calculateDistance, formatDistance, calculateBearing, isValidCoordinates, parseCoordinates };

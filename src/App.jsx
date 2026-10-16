@@ -1,8 +1,14 @@
-import React from 'react';
 import Compass from './components/Compass';
+import ErrorBoundary from './components/ErrorBoundary';
+import UpdatePrompt from './components/UpdatePrompt';
 
 function App() {
-  return <Compass />;
+  return (
+    <ErrorBoundary>
+      <Compass />
+      <UpdatePrompt />
+    </ErrorBoundary>
+  );
 }
 
 export default App;

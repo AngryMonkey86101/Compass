@@ -1,17 +1,216 @@
-.compass-arrow {
-  width: 40px;
-  height: 40px;
-  background-color: red;
+:root {
+  --text: #1c1c1e;
+  --muted: #6c6c70;
+  --border: #d1d1d6;
+  --field: #f2f2f7;
+  --green: #1f8a3b;
+  --red: #d70015;
+  --blue: #007aff;
+  --card-bg: rgba(255, 255, 255, 0.85);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  min-height: 100vh;
+  padding: 30px 15px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-  margin: 20px auto;
+  background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.card {
+  width: 100%;
+  max-width: 340px;
+  margin-bottom: 20px;
+  padding: 20px;
+  text-align: center;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+.card__title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--field);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.field:focus-visible {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
+select.field {
+  background: #fff;
+}
+
+.btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.btn--danger {
+  background: var(--red);
+}
+
+.btn--large {
+  max-width: 340px;
+  margin-top: 20px;
+  font-size: 18px;
+}
+
+.error {
+  margin: 4px 0;
+  color: var(--red);
+  font-size: 14px;
+  text-align: center;
+}
+
+.muted {
+  margin: 15px 0;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 500;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.distance {
+  margin: 0 0 25px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.dial {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 0 auto 20px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+}
+
+.dial__face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   transition: transform 0.1s ease;
 }
 
-.compass-arrow::before {
-  content: '↑';
+.dial__arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transition: transform 0.1s ease;
+}
+
+.dial__arrow svg {
+  display: block;
+  width: 150px;
+  height: 150px;
+  filter: drop-shadow(0 6px 8px rgba(0, 122, 255, 0.3));
+}
+
+.dial__arrow--hidden {
+  visibility: hidden;
+}
+
+.coords {
+  font-family: SFMono-Regular, Consolas, monospace;
+  font-size: 16px;
+}
+
+.accuracy {
+  margin: 5px 0 15px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.version {
+  margin-top: auto;
+  padding-bottom: 10px;
+  width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #1c1c1e;
+  color: #fff;
+  font-size: 14px;
+}
+
+.update-banner button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  color: #1c1c1e;
+  font-weight: 600;
+  cursor: pointer;
 }

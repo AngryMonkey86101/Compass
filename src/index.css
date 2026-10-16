@@ -127,6 +127,24 @@ input {
   overflow-x: hidden;
 }
 
+.install {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.install__text {
+  margin: 0;
+}
+
+.install__icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+  color: var(--accent);
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -153,7 +171,8 @@ input {
 
 /* Планшет в портрете и большие телефоны: одна колонка шире, циферблат крупнее */
 @media (min-width: 600px) {
-  .layout {
+  .layout,
+  .install {
     max-width: 560px;
   }
 }
@@ -163,6 +182,10 @@ input {
   .app {
     padding-left: max(var(--s-6), env(safe-area-inset-left));
     padding-right: max(var(--s-6), env(safe-area-inset-right));
+  }
+
+  .install {
+    max-width: 1200px;
   }
 
   .layout {

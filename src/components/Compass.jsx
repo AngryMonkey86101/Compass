@@ -11,6 +11,7 @@ import CompassDial from './CompassDial';
 import LocationList from './LocationList';
 import CoordsPanel from './CoordsPanel';
 import EventFeed from './EventFeed';
+import InstallBanner from './InstallBanner';
 
 export default function Compass() {
   const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
@@ -54,6 +55,8 @@ export default function Compass() {
         isSensorOn={isPermissionGranted}
         sensorError={orientError}
       />
+
+      <InstallBanner />
 
       <div className="layout">
         <div className="layout__target">

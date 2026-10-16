@@ -18,28 +18,31 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "prompt",
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff2}"]
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,woff2}"],
+        // Заставки iOS не нужны в офлайн-кэше: iOS забирает их сам при установке
+        globIgnores: ["splash/**"]
       },
       manifest: {
-        name: "Навигатор",
+        id: "/",
+        name: "Компас",
         short_name: "Компас",
-        description: "Оффлайн GPS навигатор",
+        description: "Офлайн-компас с GPS: стрелка указывает на выбранную точку",
+        lang: "ru",
+        dir: "ltr",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        display_override: ["standalone"],
+        orientation: "any",
         theme_color: "#0d1820",
         background_color: "#0d1820",
-        display: "standalone",
+        categories: ["navigation", "travel", "utilities"],
         icons: [
-          {
-            src: "/icon-192.png",
-            sizes: "192x192",
-            type: "image/png"
-          },
-          {
-            src: "/icon-512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable"
-          }
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
         ]
       }
     })

@@ -5,8 +5,10 @@ import AddLocationForm from './AddLocationForm';
 // удаление выбранной — с подтверждением прямо в панели (window.confirm блокируется в PWA)
 export default function LocationList({ items, selectedId, onSelect, onAdd, onDelete }) {
   const [isAdding, setIsAdding] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  // id точки, удаление которой подтверждается: подтверждение не переходит на другую выбранную точку
+  const [confirmId, setConfirmId] = useState(null);
   const selected = items.find((item) => item.id === selectedId) ?? null;
+  const isConfirming = selected !== null && confirmId === selected.id;
 
   const handleAdd = (name, lat, lon) => {
     onAdd(name, lat, lon);
@@ -14,13 +16,13 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onDel
   };
 
   const handleSelect = (id) => {
-    setConfirmDelete(false);
+    setConfirmId(null);
     onSelect(id);
   };
 
   const handleDelete = () => {
-    if (selected) onDelete(selected.id);
-    setConfirmDelete(false);
+    if (isConfirming) onDelete(selected.id);
+    setConfirmId(null);
   };
 
   return (
@@ -63,16 +65,16 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onDel
 
       {selected && (
         <div className="loc-list__footer">
-          {confirmDelete ? (
+          {isConfirming ? (
             <>
               <p className="error" role="alert">Удалить точку «{selected.name}»?</p>
               <div className="btn-row">
                 <button type="button" className="btn btn--danger" onClick={handleDelete}>Удалить</button>
-                <button type="button" className="btn btn--secondary" onClick={() => setConfirmDelete(false)}>Отмена</button>
+                <button type="button" className="btn btn--secondary" onClick={() => setConfirmId(null)}>Отмена</button>
               </div>
             </>
           ) : (
-            <button type="button" className="btn btn--danger btn--block" onClick={() => setConfirmDelete(true)}>
+            <button type="button" className="btn btn--danger btn--block" onClick={() => setConfirmId(selected.id)}>
               Удалить {selected.label}
             </button>
           )}

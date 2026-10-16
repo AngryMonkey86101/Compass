@@ -13,7 +13,9 @@ export default function StatusBar({ coords, isGeoLoading, geoError, isSensorOn, 
 
   let sensor;
   if (sensorError) sensor = { tone: 'danger', text: 'ошибка' };
-  else if (isSensorOn) sensor = { tone: 'ok', text: 'вкл' };
+  // «вкл» — только выдано разрешение, а не «датчик работает» (на устройстве без магнитометра стрелка стоит),
+  // поэтому нейтральный цвет, не зелёный
+  else if (isSensorOn) sensor = { tone: 'neutral', text: 'вкл' };
   else sensor = { tone: 'muted', text: 'выкл' };
 
   return (

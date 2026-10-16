@@ -461,8 +461,17 @@ input {
 
 .dial {
   position: relative;
+  flex: none;
   width: min(100%, 340px);
-  aspect-ratio: 1 / 1;
+}
+
+/* Квадрат через padding-top: 100% (от ширины) — надёжнее aspect-ratio: в Safari связка
+   aspect-ratio + width: min(…) во flex-контейнере давала блок выше ширины, и вращающиеся
+   слои съезжали вниз относительно неподвижного кольца */
+.dial::before {
+  content: "";
+  display: block;
+  padding-top: 100%;
 }
 
 @media (min-width: 600px) {
@@ -483,6 +492,8 @@ input {
   width: 100%;
   display: flex;
   justify-content: center;
+  /* без растяжения по высоте: размер циферблата задаёт только его ширина */
+  align-items: flex-start;
 }
 
 /* Перекрестие: неподвижное, в пределах секции (без горизонтальной прокрутки) */
@@ -508,6 +519,7 @@ input {
 }
 
 /* Все вращающиеся слои — только transform через ref, без transition и фильтров (плавность на iOS) */
+.dial__base,
 .dial__face,
 .dial__arrow,
 .dial__orbit,
@@ -523,14 +535,6 @@ input {
 .dial__arrow,
 .dial__orbit {
   will-change: transform;
-}
-
-/* Неподвижная подложка в потоке: её viewBox задаёт высоту циферблата и там, где нет aspect-ratio */
-.dial__base {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: auto;
 }
 
 .dial__arrow--hidden,

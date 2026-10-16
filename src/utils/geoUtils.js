@@ -35,4 +35,29 @@ function calculateBearing(lat1, lon1, lat2, lon2) {
   return bearing;
 }
 
-export { calculateDistance, calculateBearing };
+function isValidCoordinates(lat, lon) {
+  return Number.isFinite(lat) && Number.isFinite(lon) &&
+    lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+}
+
+// Разбирает строку «широта, долгота». Принимает десятичную точку или запятую
+// («55.75, 37.62» и «55,75; 37,62»). Возвращает { lat, lon } или { error }.
+function parseCoordinates(input) {
+  const formatHint = 'Формат: «55.7535, 37.6210»';
+  const text = String(input ?? '').trim();
+  if (!text) return { error: 'Введите координаты. ' + formatHint };
+
+  const numberPattern = /-?\d+(?:[.,]\d+)?/g;
+  const matches = text.match(numberPattern) || [];
+  const rest = text.replace(numberPattern, '');
+  if (matches.length !== 2 || /[^\s,;]/.test(rest)) {
+    return { error: 'Не удалось разобрать координаты. ' + formatHint };
+  }
+
+  const [lat, lon] = matches.map((m) => parseFloat(m.replace(',', '.')));
+  if (lat < -90 || lat > 90) return { error: 'Широта должна быть от -90 до 90' };
+  if (lon < -180 || lon > 180) return { error: 'Долгота должна быть от -180 до 180' };
+  return { lat, lon };
+}
+
+export { calculateDistance, calculateBearing, isValidCoordinates, parseCoordinates };

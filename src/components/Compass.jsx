@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { calculateDistance, calculateBearing } from '../utils/geoUtils';
+import { calculateDistance, calculateBearing, parseCoordinates } from '../utils/geoUtils';
 import useGeolocation from '../hooks/useGeolocation';
 import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
@@ -14,6 +14,7 @@ export default function Compass() {
   const [newName, setNewName] = useState('');
   const [newCoords, setNewCoords] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
+  const [formError, setFormError] = useState('');
 
   // 3. Вычисления на основе данных из хуков
   const bearing = coords && selectedLocation ? calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon) : 0;
@@ -22,14 +23,19 @@ export default function Compass() {
 
   // 4. Обработчики событий
   const handleAddLocation = () => {
-    if (!newName || !newCoords) return;
-    const parts = newCoords.split(',');
-    if (parts.length !== 2) return;
-    const lat = parseFloat(parts[0].trim());
-    const lon = parseFloat(parts[1].trim());
-    if (isNaN(lat) || isNaN(lon)) return;
+    const name = newName.trim();
+    if (!name) {
+      setFormError('Введите название точки');
+      return;
+    }
+    const parsed = parseCoordinates(newCoords);
+    if (parsed.error) {
+      setFormError(parsed.error);
+      return;
+    }
 
-    addLocation(newName, lat, lon);
+    addLocation(name, parsed.lat, parsed.lon);
+    setFormError('');
     setNewName('');
     setNewCoords('');
   };
@@ -43,7 +49,7 @@ export default function Compass() {
 
   const handleDeleteLocation = () => {
     if (!selectedLocation) return;
-    deleteLocation(selectedLocation.name);
+    deleteLocation(selectedLocation.id);
   };
 
   const enableSensors = async () => {
@@ -132,12 +138,12 @@ export default function Compass() {
       <div style={{ ...cardStyle, textAlign: 'center', marginBottom: '20px' }}>
         <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: '600', color: '#8e8e93', textTransform: 'uppercase' }}>Выбор точки</p>
         <select
-          value={selectedLocation ? selectedLocation.name : ''}
+          value={selectedLocation ? selectedLocation.id : ''}
           onChange={(e) => selectLocation(e.target.value)}
           style={{ ...selectStyle, width: '100%' }}
         >
           {savedLocations.map(l => (
-            <option key={l.name} value={l.name}>{l.name}</option>
+            <option key={l.id} value={l.id}>{l.name}</option>
           ))}
         </select>
 
@@ -203,6 +209,9 @@ export default function Compass() {
           type="text" placeholder="Широта, Долгота" value={newCoords}
           onChange={(e) => setNewCoords(e.target.value)} style={inputStyle}
         />
+        {formError && (
+          <p role="alert" style={{ color: '#FF3B30', fontSize: '14px', margin: '4px 0 0 0' }}>{formError}</p>
+        )}
         <button onClick={handleAddLocation} style={buttonStyle}>
           Добавить
         </button>

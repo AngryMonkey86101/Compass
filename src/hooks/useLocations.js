@@ -60,6 +60,43 @@ const useLocations = () => {
     return true;
   };
 
+  // Пакетный импорт (KMZ/KML) одним обновлением списка. Точка с тем же названием, что уже
+  // есть в списке, заменяет её: координаты обновляются на месте, id и позиция в списке
+  // сохраняются; лишние одноимённые дубли удаляются. Повторный импорт файла обновляет точки,
+  // а не плодит копии. Возвращает { added, replaced }; первая импортированная становится целью.
+  const importLocations = (points) => {
+    const incoming = points.map((p) => normalizeLocation({ id: generateId(), ...p })).filter(Boolean);
+    if (incoming.length === 0) return { added: 0, replaced: 0 };
+
+    const byName = new Map(incoming.map((loc) => [loc.name, loc]));
+    const next = [];
+    const usedNames = new Set();
+    let replaced = 0;
+
+    for (const loc of savedLocations) {
+      const update = byName.get(loc.name);
+      if (!update) {
+        next.push(loc);
+      } else if (!usedNames.has(loc.name)) {
+        next.push({ ...loc, lat: update.lat, lon: update.lon });
+        usedNames.add(loc.name);
+        replaced += 1;
+      }
+      // повторная одноимённая точка в старом списке — удаляется
+    }
+    const added = incoming.filter((loc) => !usedNames.has(loc.name));
+    next.push(...added);
+
+    const first = incoming[0];
+    const firstId = usedNames.has(first.name)
+      ? next.find((loc) => loc.name === first.name).id
+      : first.id;
+
+    setSavedLocations(next);
+    setSelectedId(firstId);
+    return { added: added.length, replaced };
+  };
+
   const deleteLocation = (id) => {
     const updated = savedLocations.filter((loc) => loc.id !== id);
     setSavedLocations(updated);
@@ -76,6 +113,7 @@ const useLocations = () => {
     savedLocations,
     selectedLocation,
     addLocation,
+    importLocations,
     deleteLocation,
     selectLocation
   };

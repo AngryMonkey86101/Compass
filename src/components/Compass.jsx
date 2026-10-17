@@ -16,7 +16,7 @@ import InstallBanner from './InstallBanner';
 export default function Compass() {
   const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
   const { subscribe: subscribeHeading, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
-  const { savedLocations, selectedLocation, addLocation, deleteLocation, selectLocation } = useLocations();
+  const { savedLocations, selectedLocation, addLocation, importLocations, deleteLocation, selectLocation } = useLocations();
   const { events, push } = useEventFeed();
 
   // Буквы, дистанции и азимут пересчитываются только при изменении позиции или списка, не при повороте
@@ -39,6 +39,15 @@ export default function Compass() {
 
   const handleSaveHere = (name, lat, lon) => {
     if (addLocation(name, lat, lon)) push('Текущее место сохранено', 'ok');
+  };
+
+  const handleImport = (points) => {
+    const { added, replaced } = importLocations(points);
+    if (added + replaced === 0) {
+      push('Нет точек для импорта', 'danger');
+      return;
+    }
+    push(`Импорт: добавлено ${added}${replaced ? `, заменено ${replaced}` : ''}`, 'ok');
   };
 
   const handleDelete = (id) => {
@@ -88,6 +97,7 @@ export default function Compass() {
             selectedId={selectedLocation?.id ?? null}
             onSelect={selectLocation}
             onAdd={handleAdd}
+            onImport={handleImport}
             onDelete={handleDelete}
           />
         </div>

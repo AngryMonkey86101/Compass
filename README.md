@@ -6,6 +6,7 @@
 
 - выбор, добавление и удаление точек (хранятся в `localStorage`)
 - ввод координат в форматах `55.7535, 37.6210` и `55,75; 37,62`
+- импорт точек из файлов **KMZ и KML** (Google Earth, OsmAnd, Locus и т. п.): точки, а также первая вершина линий и полигонов; одноимённые точки при повторном импорте заменяются
 - сохранение текущего места как точки
 - установка на телефон как PWA, работа без сети
 - уведомление о новой версии вместо автоматической перезагрузки
@@ -37,10 +38,11 @@ npm run lint      # oxlint
 ```
 src/
   components/   Compass, StatusBar, TargetPanel, CompassDial, LocationList, AddLocationForm,
-                CoordsPanel, EventFeed, ErrorBoundary, UpdatePrompt
-  hooks/        useGeolocation, useDeviceOrientation, useLocations, useEventFeed
+                CoordsPanel, EventFeed, ImportPanel, InstallBanner, ErrorBoundary, UpdatePrompt
+  hooks/        useGeolocation, useDeviceOrientation, useLocations, useEventFeed,
+                useInstallPrompt, useFileImport
   utils/        geoUtils (расстояние, азимут, разбор координат), angle (сглаживание),
-                labels (буквы точек, точность GPS) + тесты
+                labels (буквы точек, точность GPS), importPoints (KMZ/KML) + тесты
   data/         locations.json — точки по умолчанию
 ```
 

@@ -281,6 +281,50 @@ input {
   gap: var(--s-2);
 }
 
+.panel__actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* ---------- Импорт KMZ/KML ---------- */
+
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border: 1px dashed var(--accent);
+  background: rgba(79, 195, 247, 0.06);
+}
+
+.import__file {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.import__summary,
+.import__hint {
+  margin: 0;
+}
+
+.import__hint {
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.import__preview {
+  margin: 0;
+  padding-left: var(--s-4);
+  color: var(--text-2);
+  font-size: 15px;
+}
+
+.import__preview li {
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Кнопки ---------- */
 
 .btn {

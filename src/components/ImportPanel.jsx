@@ -1,5 +1,7 @@
 const PREVIEW_COUNT = 5;
 
+const formatSize = (bytes) => (bytes < 1024 ? `${bytes} Б` : `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} КБ`);
+
 const pluralPoints = (n) => {
   const mod10 = n % 10;
   const mod100 = n % 100;
@@ -9,13 +11,14 @@ const pluralPoints = (n) => {
 };
 
 // Предпросмотр импорта KMZ/KML: что найдено в файле и подтверждение добавления
-export default function ImportPanel({ status, fileName, format, points, skipped, error, onConfirm, onCancel }) {
+export default function ImportPanel({ status, fileName, fileSize, format, points, skipped, error, onConfirm, onCancel }) {
   if (status === 'idle') return null;
 
   return (
     <div className="import" role="region" aria-label="Импорт точек">
       <p className="label">
         Импорт{format ? ` ${format}` : ''} · <span className="import__file">{fileName}</span>
+        {' '}<span className="import__size mono">{formatSize(fileSize)}</span>
       </p>
 
       {status === 'loading' && <p className="empty" role="status">Чтение файла…</p>}

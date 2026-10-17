@@ -1,10 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import AddLocationForm from './AddLocationForm';
 import ImportPanel from './ImportPanel';
 import useFileImport from '../hooks/useFileImport';
 
-// iOS без MIME-типов может не дать выбрать .kmz/.kml в «Файлах»
-const IMPORT_ACCEPT = '.kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml';
 
 // Список точек с буквенными маркерами и дистанцией до каждой; «+» раскрывает форму новой точки,
 // удаление выбранной — с подтверждением прямо в панели (window.confirm блокируется в PWA);
@@ -16,7 +14,6 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
   const selected = items.find((item) => item.id === selectedId) ?? null;
   const isConfirming = selected !== null && confirmId === selected.id;
   const fileImport = useFileImport();
-  const fileInputRef = useRef(null);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -52,23 +49,19 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
       <div className="panel__header">
         <h2 id="loc-list-title" className="label">Точки · {items.length}</h2>
         <div className="panel__actions">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={IMPORT_ACCEPT}
-            className="visually-hidden"
-            tabIndex={-1}
-            aria-hidden="true"
-            onChange={handleFileChange}
-          />
-          <button
-            type="button"
-            className="btn btn--secondary"
-            aria-label="Импорт точек из файла KMZ или KML"
-            onClick={() => fileInputRef.current?.click()}
-          >
+          {/* Нативный выбор файла: поле внутри <label>, без программного click() — его игнорируют
+              некоторые встроенные браузеры Android. Фильтра accept нет намеренно: iOS не знает тип
+              .kml и показывает такие файлы серыми, Android может отфильтровать их по MIME.
+              Формат проверяется по содержимому, на чужой файл будет понятная ошибка. */}
+          <label className="btn btn--secondary file-btn">
+            <input
+              type="file"
+              className="visually-hidden"
+              aria-label="Импорт точек из файла KMZ или KML"
+              onChange={handleFileChange}
+            />
             Импорт
-          </button>
+          </label>
           <button
             type="button"
             className="btn btn--icon"

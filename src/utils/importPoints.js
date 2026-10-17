@@ -1,10 +1,13 @@
+import { kml } from '@tmcw/togeojson';
 import { isValidCoordinates } from './geoUtils';
 
 // Импорт точек из KMZ/KML. Разбор отделён от интерфейса, чтобы его можно было тестировать.
-// Тяжёлые библиотеки (JSZip, togeojson) подгружаются только при выборе файла —
-// стартовый бандл приложения от импорта не растёт.
+// togeojson (~3 КБ gzip) — в основном бандле: KML разбирается без дополнительных загрузок,
+// даже если сеть обрывает запросы. JSZip (~28 КБ gzip) нужен только для KMZ и подгружается
+// по требованию с ограничением по времени.
 
 const UNNAMED = 'Без названия';
+const JSZIP_TIMEOUT_MS = 15000;
 
 // Первая пара «долгота, широта» из любой геометрии GeoJSON: точка, линия, полигон,
 // мульти-варианты и коллекции. Координаты могут содержать высоту ([lon, lat, alt]) —
@@ -64,8 +67,25 @@ function pointsFromGeoJSON(geojson) {
 
 const isZip = (bytes) => bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
 
-async function kmlTextFromKmz(buffer) {
-  const { default: JSZip } = await import('jszip');
+// Загрузка JSZip с ограничением по времени: при обрыве сети import() может висеть бесконечно
+function loadJSZip(timeoutMs) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(
+      'Модуль для KMZ не загрузился — проверьте сеть и выберите файл снова или используйте .kml'
+    )), timeoutMs);
+  });
+  const load = import('jszip').then(
+    (module) => module.default,
+    () => {
+      throw new Error('Модуль для KMZ не загрузился — проверьте сеть и выберите файл снова или используйте .kml');
+    }
+  );
+  return Promise.race([load, timeout]).finally(() => clearTimeout(timer));
+}
+
+async function kmlTextFromKmz(buffer, jszipTimeoutMs) {
+  const JSZip = await loadJSZip(jszipTimeoutMs);
   let zip;
   try {
     zip = await JSZip.loadAsync(buffer);
@@ -81,12 +101,12 @@ async function kmlTextFromKmz(buffer) {
 
 // Разбор файла пользователя. Формат определяется по содержимому (zip → KMZ, иначе текст KML),
 // поэтому работает и для файлов без расширения или с неверным расширением.
-async function readPointsFile(file) {
+async function readPointsFile(file, { jszipTimeoutMs = JSZIP_TIMEOUT_MS } = {}) {
   if (!file) throw new Error('Файл не выбран');
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   const isKmz = isZip(bytes);
-  const text = isKmz ? await kmlTextFromKmz(buffer) : new TextDecoder('utf-8').decode(bytes);
+  const text = isKmz ? await kmlTextFromKmz(buffer, jszipTimeoutMs) : new TextDecoder('utf-8').decode(bytes);
 
   const doc = new DOMParser().parseFromString(text, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length > 0 || !doc.documentElement ||
@@ -94,7 +114,6 @@ async function readPointsFile(file) {
     throw new Error(isKmz ? 'KML внутри архива повреждён' : 'Это не файл KML или KMZ');
   }
 
-  const { kml } = await import('@tmcw/togeojson');
   const result = pointsFromGeoJSON(kml(doc));
   if (result.points.length === 0) {
     throw new Error(result.skipped > 0

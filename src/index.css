@@ -304,6 +304,21 @@ input {
   overflow-wrap: anywhere;
 }
 
+.import__size {
+  text-transform: none;
+  color: var(--text-3);
+}
+
+/* Кнопка-обёртка нативного выбора файла: фокус с поля внутри показываем на самой кнопке */
+.file-btn {
+  position: relative;
+}
+
+.file-btn:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .import__summary,
 .import__hint {
   margin: 0;

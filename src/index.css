@@ -1,17 +1,814 @@
-.compass-arrow {
-  width: 40px;
-  height: 40px;
-  background-color: red;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-  margin: 20px auto;
-  transition: transform 0.1s ease;
+/* Тактический HUD — токены и компоненты. Источник правил: DESIGN.md */
+
+:root {
+  /* Поверхности */
+  --bg: #0d1820;
+  --bg-elev: #13222c;
+  --surface: rgba(10, 20, 27, 0.78);
+  --surface-hover: rgba(30, 48, 60, 0.85);
+  --grid: rgba(160, 190, 210, 0.06);
+  --line: rgba(190, 210, 222, 0.35);
+  --line-soft: rgba(190, 210, 222, 0.18);
+  --line-strong: #c9d6de;
+
+  /* Текст */
+  --text: #e6eef2;
+  --text-2: #9fb1bd;
+  --text-3: #7d8f9b;
+
+  /* Смысловые акценты */
+  --accent: #4fc3f7;
+  --accent-dim: rgba(79, 195, 247, 0.16);
+  --target: #f28b6e;
+  --ok: #a5e05a;
+  --warn: #f2c27a;
+  --danger: #ff6b5b;
+
+  /* Шрифты */
+  --font-ui: 'Fira Sans Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  /* Отступы, сетка 4 px */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --tap: 44px;
+
+  color-scheme: dark;
 }
 
-.compass-arrow::before {
-  content: '↑';
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 22px;
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Типографика ---------- */
+
+.label {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  /* Единицы («м», «км») не переводятся в капс внутри меток: «±8 М» читалось бы как мегаметры */
+  text-transform: none;
+}
+
+.tone-ok { color: var(--ok); }
+.tone-warn { color: var(--warn); }
+.tone-danger { color: var(--danger); }
+.tone-muted { color: var(--text-3); }
+.tone-neutral { color: var(--text-2); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Каркас ---------- */
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: var(--s-4);
+  padding-top: max(var(--s-4), env(safe-area-inset-top));
+  padding-right: max(var(--s-4), env(safe-area-inset-right));
+  padding-bottom: max(var(--s-4), env(safe-area-inset-bottom));
+  padding-left: max(var(--s-4), env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  overflow-x: hidden;
+}
+
+.install {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.install__text {
+  margin: 0;
+}
+
+.install__icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+  color: var(--accent);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "target"
+    "dial"
+    "list"
+    "coords";
+  gap: var(--s-3);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.layout__target { grid-area: target; }
+.layout__dial {
+  grid-area: dial;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.layout__list { grid-area: list; }
+.layout__coords { grid-area: coords; }
+
+/* Планшет в портрете и большие телефоны: одна колонка шире, циферблат крупнее */
+@media (min-width: 600px) {
+  .layout,
+  .install {
+    max-width: 560px;
+  }
+}
+
+/* Две колонки — только в альбомной ориентации (в портрете планшета ~800 px циферблат был бы мелким) */
+@media (min-width: 768px) and (orientation: landscape), (min-width: 1100px) {
+  .app {
+    padding-left: max(var(--s-6), env(safe-area-inset-left));
+    padding-right: max(var(--s-6), env(safe-area-inset-right));
+  }
+
+  .install {
+    max-width: 1200px;
+  }
+
+  .layout {
+    max-width: 1200px;
+    grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "target dial"
+      "list   dial"
+      "coords dial";
+    column-gap: var(--s-6);
+    align-items: start;
+  }
+
+  .layout__dial {
+    position: sticky;
+    top: var(--s-4);
+  }
+}
+
+/* ---------- Строка статуса ---------- */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--line);
+}
+
+.status-bar__title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.status-bar__items {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-item__dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+}
+
+/* ---------- Панели ---------- */
+
+.panel {
+  position: relative;
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+/* Уголки-скобки у активной панели: четыре L-образных уголка градиентами, без лишней разметки */
+.panel--active {
+  background:
+    linear-gradient(var(--line-strong), var(--line-strong)) top left / 10px 2px,
+    linear-gradient(var(--line-strong), var(--line-strong)) top left / 2px 10px,
+    linear-gradient(var(--line-strong), var(--line-strong)) top right / 10px 2px,
+    linear-gradient(var(--line-strong), var(--line-strong)) top right / 2px 10px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom left / 10px 2px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom left / 2px 10px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 10px 2px,
+    linear-gradient(var(--line-strong), var(--line-strong)) bottom right / 2px 10px,
+    var(--surface);
+  background-repeat: no-repeat;
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.panel__actions {
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* ---------- Импорт KMZ/KML ---------- */
+
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  border: 1px dashed var(--accent);
+  background: rgba(79, 195, 247, 0.06);
+}
+
+.import__file {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.import__size {
+  text-transform: none;
+  color: var(--text-3);
+}
+
+/* Кнопка-обёртка нативного выбора файла: фокус с поля внутри показываем на самой кнопке */
+.file-btn {
+  position: relative;
+}
+
+.file-btn:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.import__summary,
+.import__hint {
+  margin: 0;
+}
+
+.import__hint {
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.import__preview {
+  margin: 0;
+  padding-left: var(--s-4);
+  color: var(--text-2);
+  font-size: 15px;
+}
+
+.import__preview li {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Кнопки ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--accent-dim);
+}
+
+.btn:disabled {
+  border-style: dashed;
+  border-color: var(--line);
+  color: var(--text-3);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn--secondary {
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.btn--secondary:hover {
+  background: var(--surface-hover);
+}
+
+.btn--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn--danger:hover {
+  background: rgba(255, 107, 91, 0.12);
+}
+
+.btn--icon {
+  width: var(--tap);
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 22px;
+}
+
+.btn-row {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.btn-row > .btn {
+  flex: 1;
+}
+
+/* ---------- Поля ---------- */
+
+.field-label {
+  display: block;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+}
+
+.field::placeholder {
+  color: var(--text-3);
+}
+
+.field:focus-visible {
+  border-color: var(--accent);
+  background: rgba(79, 195, 247, 0.1);
+  outline: none;
+}
+
+.field--mono {
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+/* ---------- Маркер точки (ромб) ---------- */
+
+.marker {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Ромб рисуется псевдоэлементом, буква остаётся прямой */
+.marker::before {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.marker--target {
+  color: var(--target);
+}
+
+/* ---------- Панель цели ---------- */
+
+.target__name {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.target__name > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.target__metrics {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.target__distance {
+  font-size: 34px;
+  line-height: 38px;
+  font-weight: 600;
+}
+
+.target__unit {
+  font-size: 18px;
+  color: var(--text-2);
+}
+
+.target__bearing {
+  font-size: 15px;
+  color: var(--text-2);
+}
+
+/* ---------- Циферблат ---------- */
+
+.dial-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  overflow: hidden;
+}
+
+.dial {
+  position: relative;
+  flex: none;
+  width: min(100%, 340px);
+}
+
+/* Квадрат через padding-top: 100% (от ширины) — надёжнее aspect-ratio: в Safari связка
+   aspect-ratio + width: min(…) во flex-контейнере давала блок выше ширины, и вращающиеся
+   слои съезжали вниз относительно неподвижного кольца */
+.dial::before {
+  content: "";
+  display: block;
+  padding-top: 100%;
+}
+
+@media (min-width: 600px) {
+  .dial {
+    width: min(100%, 480px);
+  }
+}
+
+@media (min-width: 768px) and (orientation: landscape), (min-width: 1100px) {
+  .dial {
+    width: min(100%, 70vh, 560px);
+  }
+}
+
+/* Сцена циферблата на всю ширину секции: в ней перекрестие */
+.dial-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  /* без растяжения по высоте: размер циферблата задаёт только его ширина */
+  align-items: flex-start;
+}
+
+/* Перекрестие: неподвижное, в пределах секции (без горизонтальной прокрутки) */
+.dial-section__crosshair-h,
+.dial-section__crosshair-v {
+  position: absolute;
+  background: var(--line-soft);
+  pointer-events: none;
+}
+
+.dial-section__crosshair-h {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.dial-section__crosshair-v {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+/* Все вращающиеся слои — только transform через ref, без transition и фильтров (плавность на iOS) */
+.dial__base,
+.dial__face,
+.dial__arrow,
+.dial__orbit,
+.dial__lubber {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dial__face,
+.dial__arrow,
+.dial__orbit {
+  will-change: transform;
+}
+
+.dial__arrow--hidden,
+.dial__orbit--hidden {
+  visibility: hidden;
+}
+
+.dial__orbit-marker {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 11%;
+  height: 11%;
+  margin-left: -5.5%;
+  will-change: transform;
+}
+
+.dial__readout {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.dial__heading {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+  min-width: 4ch;
+}
+
+/* ---------- Список точек ---------- */
+
+.loc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+
+.loc-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--s-2);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.loc-item:hover {
+  background: var(--surface-hover);
+}
+
+.loc-item[aria-pressed="true"] {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.loc-item[aria-pressed="true"] .marker {
+  color: var(--target);
+}
+
+.loc-item__name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loc-item__distance {
+  flex: none;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.loc-item[aria-pressed="true"] .loc-item__distance {
+  color: var(--text);
+}
+
+.loc-list__footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--line-soft);
+}
+
+.empty {
+  margin: 0;
+  color: var(--text-2);
+}
+
+/* ---------- Координаты ---------- */
+
+.coords__value {
+  font-size: 15px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Лента событий ---------- */
+
+.feed {
+  position: fixed;
+  right: max(var(--s-4), env(safe-area-inset-right));
+  bottom: max(var(--s-4), env(safe-area-inset-bottom));
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  max-width: calc(100% - 2 * var(--s-4));
+  pointer-events: none;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: right;
+}
+
+.feed__item {
+  padding: 2px var(--s-2);
+  background: rgba(13, 24, 32, 0.85);
+  color: var(--text-3);
+  animation: feed-fade 4s linear forwards;
+}
+
+.feed__item:last-child {
+  color: var(--text);
+}
+
+.feed__item:nth-last-child(2) {
+  color: var(--text-2);
+}
+
+.feed__item--ok:last-child { color: var(--ok); }
+.feed__item--danger:last-child { color: var(--danger); }
+
+@keyframes feed-fade {
+  0%, 75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed__item {
+    animation: none;
+  }
+}
+
+/* ---------- Прочее ---------- */
+
+.version {
+  margin: auto 0 0;
+  padding-top: var(--s-4);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.fatal {
+  max-width: 480px;
+  margin: 15vh auto 0;
+}
+
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: max(var(--s-4), env(safe-area-inset-bottom));
+  z-index: 20;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--s-4));
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
+  background: var(--bg-elev);
+  border: 1px solid var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }

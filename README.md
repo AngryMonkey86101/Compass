@@ -1,16 +1,51 @@
-# React + Vite
+# Compass
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Оффлайн-навигатор (PWA): стрелка на экране указывает на выбранную точку и показывает расстояние до неё. Работает по GPS и датчикам ориентации телефона.
 
-Currently, two official plugins are available:
+## Возможности
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- выбор, добавление и удаление точек (хранятся в `localStorage`)
+- ввод координат в форматах `55.7535, 37.6210` и `55,75; 37,62`
+- импорт точек из файлов **KMZ и KML** (Google Earth, OsmAnd, Locus и т. п.): точки, а также первая вершина линий и полигонов; одноимённые точки при повторном импорте заменяются
+- сохранение текущего места как точки
+- установка на телефон как PWA, работа без сети
+- уведомление о новой версии вместо автоматической перезагрузки
 
-## React Compiler
+## Установка на устройство (без интерфейса браузера)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Компас — PWA: после установки открывается с главного экрана отдельным окном и работает офлайн.
 
-## Expanding the Oxlint configuration
+- **iPhone / iPad:** в Safari нажмите «Поделиться» → «На экран „Домой“». Приложение подскажет это само при первом открытии.
+- **Android:** кнопка «Установить» в приложении или меню Chrome ⋮ → «Установить приложение».
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Иконки и заставки iOS генерирует `scripts/generate-pwa-assets.py` (нужен Pillow); он же печатает теги `apple-touch-startup-image` для `index.html`.
+
+## Запуск
+
+```bash
+npm install
+npm run dev       # разработка
+npm run build     # сборка в dist/
+npm run preview   # просмотр сборки
+npm test          # тесты (vitest)
+npm run lint      # oxlint
+```
+
+Датчики и геолокация требуют HTTPS (на `localhost` работают и по HTTP). На iOS компас включается кнопкой «Включить компас», так как система запрашивает разрешение.
+
+## Структура
+
+```
+src/
+  components/   Compass, StatusBar, TargetPanel, CompassDial, LocationList, AddLocationForm,
+                CoordsPanel, EventFeed, ImportPanel, InstallBanner, ErrorBoundary, UpdatePrompt
+  hooks/        useGeolocation, useDeviceOrientation, useLocations, useEventFeed,
+                useInstallPrompt, useFileImport
+  utils/        geoUtils (расстояние, азимут, разбор координат), angle (сглаживание),
+                labels (буквы точек, точность GPS), importPoints (KMZ/KML) + тесты
+  data/         locations.json — точки по умолчанию
+```
+
+Версия в интерфейсе берётся из `package.json`.
+
+Дизайн-система (тактический HUD): [DESIGN.md](DESIGN.md). Анализ найденных проблем и план работ: [problems.md](problems.md).

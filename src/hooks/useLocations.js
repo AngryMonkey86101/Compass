@@ -1,52 +1,121 @@
 import { useState, useEffect } from 'react';
+import defaultLocationsData from '../data/locations.json';
+import { isValidCoordinates } from '../utils/geoUtils';
 
-const compassLocations = 'compassLocations';
-const defaultLocations = [
-  { name: "Северный полюс", lat: 90.0, lon: 0.0 },
-  { name: "Москва (Красная площадь)", lat: 55.7535, lon: 37.6210 },
-  { name: "Париж (Эйфелева башня)", lat: 48.8584, lon: 2.2945 },
-  { name: "Токио (Сибуя)", lat: 35.6595, lon: 139.7005 },
-  { name: "Нью-Йорк (Таймс-сквер)", lat: 40.7580, lon: -73.9855 }
-];
+const STORAGE_KEY = 'compassLocations';
+
+const generateId = () =>
+  globalThis.crypto?.randomUUID?.() ?? `loc-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+// Приводит запись из хранилища к актуальному формату; невалидные записи отбрасываются.
+// Старые записи без id (до миграции) получают новый id.
+const normalizeLocation = (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+  const lat = Number(raw.lat);
+  const lon = Number(raw.lon);
+  if (!name || !isValidCoordinates(lat, lon)) return null;
+  const id = typeof raw.id === 'string' && raw.id ? raw.id : generateId();
+  return { id, name, lat, lon };
+};
+
+const loadLocations = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        const seen = new Set();
+        return parsed
+          .map(normalizeLocation)
+          .filter((loc) => loc && !seen.has(loc.id) && seen.add(loc.id));
+      }
+    }
+  } catch {
+    // повреждённые данные или недоступный localStorage — используем значения по умолчанию
+  }
+  return defaultLocationsData;
+};
 
 const useLocations = () => {
-  const [savedLocations, setSavedLocations] = useState(() => {
-    const saved = localStorage.getItem(compassLocations);
-    if (saved) try { return JSON.parse(saved); } catch (e) { return defaultLocations; }
-    return defaultLocations;
-  });
-
-  const [selectedLocation, setSelectedLocation] = useState(savedLocations.length > 0 ? savedLocations[0] : null);
+  const [savedLocations, setSavedLocations] = useState(loadLocations);
+  const [selectedId, setSelectedId] = useState(() => savedLocations[0]?.id ?? null);
 
   useEffect(() => {
-    localStorage.setItem(compassLocations, JSON.stringify(savedLocations));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedLocations));
+    } catch {
+      // хранилище недоступно или переполнено — работаем без сохранения
+    }
   }, [savedLocations]);
 
+  const selectedLocation = savedLocations.find((loc) => loc.id === selectedId) ?? null;
+
+  // Возвращает true, если точка добавлена
   const addLocation = (name, lat, lon) => {
-    const newLoc = { name, lat, lon };
-    setSavedLocations([...savedLocations, newLoc]);
-    setSelectedLocation(newLoc);
+    const newLoc = normalizeLocation({ id: generateId(), name, lat, lon });
+    if (!newLoc) return false;
+    setSavedLocations((prev) => [...prev, newLoc]);
+    setSelectedId(newLoc.id);
+    return true;
   };
 
-  const deleteLocation = (name) => {
-    const updated = savedLocations.filter(loc => loc.name !== name);
+  // Пакетный импорт (KMZ/KML) одним обновлением списка. Точка с тем же названием, что уже
+  // есть в списке, заменяет её: координаты обновляются на месте, id и позиция в списке
+  // сохраняются; лишние одноимённые дубли удаляются. Повторный импорт файла обновляет точки,
+  // а не плодит копии. Возвращает { added, replaced }; первая импортированная становится целью.
+  const importLocations = (points) => {
+    const incoming = points.map((p) => normalizeLocation({ id: generateId(), ...p })).filter(Boolean);
+    if (incoming.length === 0) return { added: 0, replaced: 0 };
+
+    const byName = new Map(incoming.map((loc) => [loc.name, loc]));
+    const next = [];
+    const usedNames = new Set();
+    let replaced = 0;
+
+    for (const loc of savedLocations) {
+      const update = byName.get(loc.name);
+      if (!update) {
+        next.push(loc);
+      } else if (!usedNames.has(loc.name)) {
+        next.push({ ...loc, lat: update.lat, lon: update.lon });
+        usedNames.add(loc.name);
+        replaced += 1;
+      }
+      // повторная одноимённая точка в старом списке — удаляется
+    }
+    const added = incoming.filter((loc) => !usedNames.has(loc.name));
+    next.push(...added);
+
+    const first = incoming[0];
+    const firstId = usedNames.has(first.name)
+      ? next.find((loc) => loc.name === first.name).id
+      : first.id;
+
+    setSavedLocations(next);
+    setSelectedId(firstId);
+    return { added: added.length, replaced };
+  };
+
+  const deleteLocation = (id) => {
+    const updated = savedLocations.filter((loc) => loc.id !== id);
     setSavedLocations(updated);
-    if (selectedLocation && selectedLocation.name === name) {
-      setSelectedLocation(updated.length > 0 ? updated[0] : null);
+    if (selectedId === id) {
+      setSelectedId(updated[0]?.id ?? null);
     }
   };
 
-  const selectLocation = (name) => {
-    const loc = savedLocations.find(l => l.name === name);
-    if (loc) setSelectedLocation(loc);
+  const selectLocation = (id) => {
+    if (savedLocations.some((loc) => loc.id === id)) setSelectedId(id);
   };
 
-  return { 
-    savedLocations, 
-    selectedLocation, 
-    addLocation, 
-    deleteLocation, 
-    selectLocation 
+  return {
+    savedLocations,
+    selectedLocation,
+    addLocation,
+    importLocations,
+    deleteLocation,
+    selectLocation
   };
 };
 

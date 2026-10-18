@@ -1,59 +1,50 @@
 import { useState, useEffect } from 'react';
 
+const isSupported = () => typeof navigator !== 'undefined' && 'geolocation' in navigator;
+
+const getErrorMessage = (error) => {
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      return 'Разрешение на использование геолокации отклонено';
+    case error.POSITION_UNAVAILABLE:
+      return 'Информация о местоположении недоступна';
+    case error.TIMEOUT:
+      return 'Время ожидания истекло';
+    default:
+      return 'Произошла неизвестная ошибка';
+  }
+};
+
 const useGeolocation = () => {
+  const supported = isSupported();
   const [coords, setCoords] = useState(null);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(supported ? null : 'Геолокация недоступна в вашем браузере');
+  const [isLoading, setIsLoading] = useState(supported);
 
   useEffect(() => {
-    let watchId;
+    if (!supported) return undefined;
 
-    const successCallback = (position) => {
-      setCoords({
-        lat: position.coords.latitude,
-        lon: position.coords.longitude,
-        accuracy: position.coords.accuracy
-      });
-      setIsLoading(false);
-    };
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setCoords({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+        setError(null);
+        setIsLoading(false);
+      },
+      (err) => {
+        setError(getErrorMessage(err));
+        setIsLoading(false);
+      },
+      // maximumAge: 0 вместе с коротким timeout часто даёт таймауты в помещении;
+      // допускаем позицию возрастом до 5 с и ждём фикс до 30 с
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 5000 }
+    );
 
-    const errorCallback = (error) => {
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          setError('Разрешение на использование геолокации отклонено');
-          break;
-        case error.POSITION_UNAVAILABLE:
-          setError('Информация о местоположении недоступна');
-          break;
-        case error.TIMEOUT:
-          setError('Время ожидания истекло');
-          break;
-        case error.UNKNOWN_ERROR:
-          setError('Неизвестная ошибка');
-          break;
-        default:
-          setError('Произошла неизвестная ошибка');
-      }
-      setIsLoading(false);
-    };
-
-    if ('geolocation' in navigator) {
-      watchId = navigator.geolocation.watchPosition(
-        successCallback,
-        errorCallback,
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Добавлен третий аргумент с опциями
-      );
-    } else {
-      setError('Геолокация недоступна в вашем браузере');
-      setIsLoading(false);
-    }
-
-    return () => {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-    };
-  }, []);
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [supported]);
 
   return { coords, error, isLoading };
 };

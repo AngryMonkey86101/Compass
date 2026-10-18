@@ -1,13 +1,244 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>compass-app</title>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Установка на главный экран: окно без интерфейса браузера -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Компас" />
+    <meta name="application-name" content="Компас" />
+    <!-- Контент заходит под строку статуса iOS; отступы под вырез — через safe-area в index.css -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Заставки iOS при запуске с главного экрана (генерирует scripts/generate-pwa-assets.py) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1334x750.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1792x828.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2436x1125.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2688x1242.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2532x1170.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2778x1284.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2556x1179.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2796x1290.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2622x1206.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2868x1320.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1488x2266.png" media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2266x1488.png" media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1620x2160.png" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2160x1620.png" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1640x2360.png" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2360x1640.png" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1668x2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2388x1668.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-1668x2420.png" media="(device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2420x1668.png" media="(device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2732x2048.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2064x2752.png" media="(device-width: 1032px) and (device-height: 1376px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="/splash/splash-2752x2064.png" media="(device-width: 1032px) and (device-height: 1376px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d1820" />
+    <meta name="description" content="Оффлайн GPS-навигатор: стрелка указывает на выбранную точку" />
+    <title>Компас</title>
+    <!--
+      Диагностика запуска. Написано на ES5 без зависимостей, чтобы работать даже там,
+      где основной бандл не загрузился или не разобрался. Если за BOOT_TIMEOUT_MS
+      приложение не отрисовалось, показывает (и обновляет раз в секунду): пойманные
+      ошибки, выполнился ли скрипт приложения, сколько байт скрипта реально пришло
+      по сети (повторная загрузка с подсчётом), сервис-воркер и данные браузера.
+    -->
+    <script>
+      (function () {
+        var BOOT_TIMEOUT_MS = 8000;
+        var STALL_MS = 5000;
+        var startedAt = Date.now();
+        var errors = [];
+        var probe = { state: 'не запускалась', received: 0, total: 0, lastProgressAt: 0 };
+
+        function remember(text) {
+          if (errors.length < 10) errors.push(String(text));
+        }
+
+        // capture: true — чтобы ловить и ошибки загрузки <script>/<link>, а не только исключения
+        window.addEventListener('error', function (event) {
+          var target = event.target;
+          if (target && target !== window && (target.src || target.href)) {
+            remember('Не загрузился файл: ' + (target.src || target.href));
+          } else {
+            remember((event.message || 'Ошибка') +
+              (event.filename ? ' (' + event.filename + ':' + event.lineno + ')' : ''));
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function (event) {
+          var reason = event.reason;
+          remember('Необработанный промис: ' + (reason && reason.message ? reason.message : reason));
+        });
+
+        function isMounted() {
+          var root = document.getElementById('root');
+          return root && root.children.length > 0;
+        }
+
+        function escapeHtml(text) {
+          return String(text).replace(/[&<>"]/g, function (ch) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch];
+          });
+        }
+
+        function kb(bytes) {
+          return (bytes / 1024).toFixed(1) + ' КБ';
+        }
+
+        function mainScriptUrl() {
+          var script = document.querySelector('script[type="module"][src]');
+          return script ? script.src : null;
+        }
+
+        // Как браузер грузит основной скрипт: из Resource Timing (есть только после окончания загрузки)
+        function scriptTimingText(url) {
+          if (!url || !window.performance || !performance.getEntriesByName) return 'нет данных';
+          var entries = performance.getEntriesByName(url);
+          if (!entries.length) return 'ещё не загрузился';
+          var e = entries[entries.length - 1];
+          // Запись в Resource Timing появляется и при обрыве загрузки — отличаем по пойманной ошибке
+          if (errors.indexOf('Не загрузился файл: ' + url) !== -1) {
+            return 'загрузка оборвалась через ' + Math.round(e.duration / 1000) + ' с';
+          }
+          return 'загружен за ' + Math.round(e.duration) + ' мс' +
+            (e.transferSize ? ', ' + kb(e.transferSize) + ' по сети' : '');
+        }
+
+        // Повторно скачиваем основной скрипт и считаем байты: так видно, где загрузка останавливается
+        function startProbe(url) {
+          if (!url || !window.fetch || probe.state !== 'не запускалась') return;
+          probe.state = 'идёт';
+          probe.startedAt = Date.now();
+          probe.lastProgressAt = probe.startedAt;
+          fetch(url, { cache: 'no-store' }).then(function (response) {
+            probe.total = Number(response.headers.get('content-length')) || 0;
+            if (!response.body || !response.body.getReader) {
+              return response.arrayBuffer().then(function (buf) {
+                probe.received = buf.byteLength;
+                probe.state = 'завершена';
+              });
+            }
+            var reader = response.body.getReader();
+            function pump() {
+              return reader.read().then(function (chunk) {
+                if (chunk.done) {
+                  probe.state = 'завершена';
+                  return;
+                }
+                probe.received += chunk.value.byteLength;
+                probe.lastProgressAt = Date.now();
+                return pump();
+              });
+            }
+            return pump();
+          }).catch(function (err) {
+            probe.state = 'ошибка через ' + Math.round((Date.now() - probe.startedAt) / 1000) + ' с: ' +
+              (err && err.message ? err.message : err);
+          });
+        }
+
+        function probeText() {
+          var text = probe.state;
+          if (probe.state === 'не запускалась') return text;
+          text += ' — получено ' + kb(probe.received) + (probe.total ? ' из ' + kb(probe.total) : '');
+          if (probe.state === 'идёт' && Date.now() - probe.lastProgressAt > STALL_MS) {
+            text += '. Загрузка ЗАВИСЛА: данные не приходят ' +
+              Math.round((Date.now() - probe.lastProgressAt) / 1000) + ' с. ' +
+              'Вероятно, сеть или провайдер обрывает соединение с хостингом.';
+          }
+          return text;
+        }
+
+        function clearCacheAndReload() {
+          var tasks = [];
+          if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+            tasks.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }));
+          }
+          if (window.caches && caches.keys) {
+            tasks.push(caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            }));
+          }
+          Promise.all(tasks).then(function () { location.reload(); }, function () { location.reload(); });
+        }
+
+        function render(box) {
+          var url = mainScriptUrl();
+          var list = errors.length
+            ? '<ul><li>' + errors.map(escapeHtml).join('</li><li>') + '</li></ul>'
+            : '<p>Ошибок не поймано.</p>';
+          box.querySelector('[data-body]').innerHTML =
+            list +
+            '<p><b>Прошло:</b> ' + Math.round((Date.now() - startedAt) / 1000) + ' с</p>' +
+            '<p><b>Скрипт приложения выполнился:</b> ' + (window.__compassBoot ? 'да (' + escapeHtml(window.__compassBoot) + ')' : 'нет') + '</p>' +
+            '<p><b>Основной скрипт:</b> ' + escapeHtml(scriptTimingText(url)) + '</p>' +
+            '<p><b>Проверка загрузки:</b> ' + escapeHtml(probeText()) + '</p>' +
+            '<p><b>Сервис-воркер:</b> ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'активен' : 'нет') +
+            ' · <b>Сеть:</b> ' + (navigator.onLine ? 'онлайн' : 'офлайн') + '</p>' +
+            '<p><b>Браузер:</b> ' + escapeHtml(navigator.userAgent) + '</p>';
+        }
+
+        function showDiagnostics() {
+          if (isMounted() || document.getElementById('boot-diagnostics')) return;
+          var box = document.createElement('div');
+          box.id = 'boot-diagnostics';
+          box.setAttribute('role', 'alert');
+          box.style.cssText = 'font:14px/1.4 system-ui,sans-serif;padding:16px;color:#1c1c1e;' +
+            'background:#fff;word-wrap:break-word;';
+          box.innerHTML =
+            '<h2 style="font-size:18px;margin:0 0 8px">Приложение не запустилось</h2>' +
+            '<div data-body></div>' +
+            '<p>Подождите 20–30 секунд и пришлите разработчику скриншот этого экрана.</p>' +
+            '<button type="button" data-reload style="padding:10px 16px;font-size:16px;margin:0 8px 8px 0">' +
+            'Перезагрузить</button>' +
+            '<button type="button" data-clear style="padding:10px 16px;font-size:16px">' +
+            'Сбросить кэш и перезагрузить</button>';
+          box.querySelector('[data-reload]').onclick = function () { location.reload(); };
+          box.querySelector('[data-clear]').onclick = clearCacheAndReload;
+          document.body.appendChild(box);
+
+          startProbe(mainScriptUrl());
+          render(box);
+
+          // Обновляем раз в секунду; если приложение всё-таки запустилось (медленная сеть) — убираем
+          var timer = setInterval(function () {
+            if (isMounted()) {
+              clearInterval(timer);
+              if (box.parentNode) box.parentNode.removeChild(box);
+              return;
+            }
+            render(box);
+          }, 1000);
+        }
+
+        setTimeout(showDiagnostics, BOOT_TIMEOUT_MS);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <script nomodule>
+      document.getElementById('root').innerHTML =
+        '<p style="font:16px system-ui,sans-serif;padding:16px">' +
+        'Браузер устарел и не может запустить приложение. Обновите Chrome или Android System WebView.</p>';
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

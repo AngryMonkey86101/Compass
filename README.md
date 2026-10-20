@@ -9,6 +9,8 @@
 - импорт точек из файлов **KML, KMZ, GPX, GeoJSON и CSV**: точки, а также первая вершина линий, полигонов и треков; одноимённые точки при повторном импорте заменяются
 - экспорт точек в KML, GPX, CSV и GeoJSON (на телефоне — через «Поделиться» или в «Загрузки»)
 - сохранение текущего места как точки
+- режим «только компас»: двойное нажатие на циферблат скрывает интерфейс, остаются компас, курс и выбранная точка; экран не гаснет (если браузер поддерживает); выход — снова двойное нажатие, «Назад» на Android или Esc
+- главное меню (☰): «Навигация», «Мануал» (инструкция), «QR-код приложения» (ссылка на https://claude-compass.netlify.app/), «Поддержать проект» (скоро)
 - установка на телефон как PWA, работа без сети
 - уведомление о новой версии вместо автоматической перезагрузки
 
@@ -35,6 +37,8 @@
 - **iPhone / iPad:** в Safari нажмите «Поделиться» → «На экран „Домой“». Приложение подскажет это само при первом открытии.
 - **Android:** кнопка «Установить» в приложении или меню Chrome ⋮ → «Установить приложение».
 
+QR-код со ссылкой на приложение генерирует `npm run qr` (адрес — в `src/config.js`) в `src/assets/app-qr.svg`.
+
 Иконки и заставки iOS генерирует `scripts/generate-pwa-assets.py` (нужен Pillow); он же печатает теги `apple-touch-startup-image` для `index.html`.
 
 ## Запуск
@@ -56,13 +60,16 @@ npm run lint      # oxlint
 src/
   components/   Compass, StatusBar, TargetPanel, CompassDial, LocationList, AddLocationForm,
                 CoordsPanel, EventFeed, ImportPanel, ExportPanel, InstallBanner, ErrorBoundary,
-                UpdatePrompt
+                UpdatePrompt; экраны Screen, MainMenu, ManualScreen, QrScreen, SupportScreen
   hooks/        useGeolocation, useDeviceOrientation, useLocations, useEventFeed,
-                useInstallPrompt, useFileImport
+                useInstallPrompt, useFileImport, useRoute (экран из адреса #/…), useWakeLock
   utils/        geoUtils (расстояние, азимут, разбор координат), angle (сглаживание),
                 labels (буквы точек, точность GPS), locationText (координаты и ссылки карт),
                 importPoints + csvPoints + pointCollector (импорт файлов), exportPoints,
-                saveFile («Поделиться» или скачивание) + тесты
+                saveFile («Поделиться» или скачивание), router (экраны и история),
+                doubleTap (двойное нажатие) + тесты
+  assets/       app-qr.svg — QR-код со ссылкой на приложение
+  config.js     адрес опубликованного приложения
   data/         locations.json — точки по умолчанию
 ```
 

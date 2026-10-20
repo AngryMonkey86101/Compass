@@ -1,12 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback, useEffect, useState } from 'react';
 import { calculateDistance, formatDistance, calculateBearing } from '../utils/geoUtils';
 import { indexToLetters } from '../utils/labels';
 import { buildExport, EXPORT_FORMATS } from '../utils/exportPoints';
 import { saveFile } from '../utils/saveFile';
+import { navigate, goBack } from '../utils/router';
 import useGeolocation from '../hooks/useGeolocation';
 import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
 import useEventFeed from '../hooks/useEventFeed';
+import useWakeLock from '../hooks/useWakeLock';
 import StatusBar from './StatusBar';
 import TargetPanel from './TargetPanel';
 import CompassDial from './CompassDial';
@@ -15,7 +17,15 @@ import CoordsPanel from './CoordsPanel';
 import EventFeed from './EventFeed';
 import InstallBanner from './InstallBanner';
 
-export default function Compass() {
+// Подсказка о выходе при каждом входе в режим: в установленном на iPhone приложении нет
+// кнопки и жеста «Назад», двойное нажатие — единственный выход, и его легко забыть
+const FOCUS_HINT_MS = 3000;
+
+// Главный экран. isFocus — режим «только компас» (#/focus): остаются циферблат, маркер цели,
+// курс и строка с выбранной точкой; остальное скрыто стилями, а не размонтировано, чтобы
+// не сбрасывать сглаживание стрелки, GPS и разрешение датчика. hidden — открыт другой экран
+// (меню, мануал): GPS и датчик продолжают работать, при возврате ждать их не нужно.
+export default function Compass({ isFocus = false, hidden = false }) {
   const { coords, error: geoError, isLoading: isGeoLoading } = useGeolocation();
   const { subscribe: subscribeHeading, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
   const { savedLocations, selectedLocation, addLocation, importLocations, deleteLocation, selectLocation } = useLocations();
@@ -34,6 +44,34 @@ export default function Compass() {
     if (!coords || !selectedLocation) return null;
     return calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon);
   }, [coords, selectedLocation]);
+
+  const [showHint, setShowHint] = useState(false);
+  useWakeLock(isFocus && !hidden);
+
+  const toggleFocus = useCallback(() => {
+    if (isFocus) {
+      goBack('nav');
+      return;
+    }
+    navigate('focus');
+    setShowHint(true);
+  }, [isFocus]);
+
+  useEffect(() => {
+    if (!showHint) return undefined;
+    const timer = setTimeout(() => setShowHint(false), FOCUS_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [showHint]);
+
+  // Esc на компьютере выходит из режима «только компас»
+  useEffect(() => {
+    if (!isFocus || hidden) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') goBack('nav');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isFocus, hidden]);
 
   const handleAdd = (name, lat, lon) => {
     if (addLocation(name, lat, lon)) push(`Точка «${name}» добавлена`, 'ok');
@@ -75,13 +113,14 @@ export default function Compass() {
   };
 
   return (
-    <main className="app">
+    <main className={`app${isFocus ? ' app--focus' : ''}`} hidden={hidden}>
       <StatusBar
         coords={coords}
         isGeoLoading={isGeoLoading}
         geoError={geoError}
         isSensorOn={isPermissionGranted}
         sensorError={orientError}
+        onMenu={() => navigate('menu')}
       />
 
       <InstallBanner />
@@ -107,7 +146,25 @@ export default function Compass() {
             subscribeHeading={subscribeHeading}
             bearing={bearing}
             targetLabel={selectedItem?.label ?? ''}
+            onDoubleTap={toggleFocus}
+            isFocus={isFocus}
           />
+          {isFocus && (
+            <p className="focus-target">
+              {selectedItem ? (
+                <>
+                  <span className="focus-target__label">{selectedItem.label}</span>
+                  <span className="focus-target__name">{selectedItem.name}</span>
+                  <span className="mono">{selectedItem.distance ?? '—'}</span>
+                </>
+              ) : (
+                <span className="tone-muted">Точка не выбрана</span>
+              )}
+            </p>
+          )}
+          {isFocus && showHint && (
+            <p className="focus-hint" role="status">Двойное нажатие на компас — вернуть интерфейс</p>
+          )}
         </div>
 
         <div className="layout__list">

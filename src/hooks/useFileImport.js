@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
 import { readPointsFile } from '../utils/importPoints';
 
-const IDLE = { status: 'idle', fileName: '', fileSize: 0, format: '', points: [], skipped: 0, error: null };
+const IDLE = { status: 'idle', fileName: '', fileSize: 0, format: '', points: [], skipped: 0, skipNotes: [], error: null };
 
-// Состояние импорта точек из KMZ/KML: idle → loading → ready | error.
+// Состояние импорта точек из файла: idle → loading → ready | error.
 // Если пользователь выбрал новый файл, пока не дочитан предыдущий, побеждает последний.
 const useFileImport = () => {
   const [state, setState] = useState(IDLE);
@@ -16,9 +16,9 @@ const useFileImport = () => {
     const fileInfo = { fileName: file.name || 'без имени', fileSize: file.size || 0 };
     setState({ ...IDLE, ...fileInfo, status: 'loading' });
     try {
-      const { points, skipped, format } = await readPointsFile(file);
+      const { points, skipped, skipNotes, format } = await readPointsFile(file);
       if (request !== requestRef.current) return;
-      setState({ ...IDLE, ...fileInfo, status: 'ready', format, points, skipped });
+      setState({ ...IDLE, ...fileInfo, status: 'ready', format, points, skipped, skipNotes });
     } catch (err) {
       if (request !== requestRef.current) return;
       setState({ ...IDLE, ...fileInfo, status: 'error', error: err?.message || 'Не удалось прочитать файл' });

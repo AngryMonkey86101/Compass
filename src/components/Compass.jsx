@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { calculateDistance, formatDistance, calculateBearing } from '../utils/geoUtils';
 import { indexToLetters } from '../utils/labels';
+import { buildExport, EXPORT_FORMATS } from '../utils/exportPoints';
+import { saveFile } from '../utils/saveFile';
 import useGeolocation from '../hooks/useGeolocation';
 import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
@@ -48,6 +50,23 @@ export default function Compass() {
       return;
     }
     push(`Импорт: добавлено ${added}${replaced ? `, заменено ${replaced}` : ''}`, 'ok');
+  };
+
+  // Файл собирается синхронно в обработчике нажатия: иначе iOS не откроет меню «Поделиться»
+  const handleExport = (format) => {
+    const label = EXPORT_FORMATS[format].label;
+    let file;
+    try {
+      const { name, mime, content } = buildExport(savedLocations, format);
+      file = new File([content], name, { type: mime });
+    } catch {
+      push(`Экспорт ${label} не удался`, 'danger');
+      return;
+    }
+    saveFile(file).then((result) => {
+      if (result === 'shared') push(`Экспорт ${label}: файл отправлен`, 'ok');
+      else if (result === 'downloaded') push(`Экспорт ${label}: файл скачан`, 'ok');
+    }, () => push(`Экспорт ${label} не удался`, 'danger'));
   };
 
   const handleDelete = (id) => {
@@ -98,6 +117,7 @@ export default function Compass() {
             onSelect={selectLocation}
             onAdd={handleAdd}
             onImport={handleImport}
+            onExport={handleExport}
             onDelete={handleDelete}
           />
         </div>

@@ -286,7 +286,18 @@ input {
   gap: var(--s-2);
 }
 
-/* ---------- Импорт KMZ/KML ---------- */
+/* Три кнопки списка точек (Импорт, Экспорт, +) на узких экранах: компактнее, а при нехватке
+   места переносятся под заголовок, не обрезаясь */
+.panel__header--wrap {
+  flex-wrap: wrap;
+  row-gap: var(--s-2);
+}
+
+.panel__actions .btn:not(.btn--icon) {
+  padding: 0 var(--s-3);
+}
+
+/* ---------- Импорт ---------- */
 
 .import {
   display: flex;
@@ -338,6 +349,36 @@ input {
 
 .import__preview li {
   overflow-wrap: anywhere;
+}
+
+/* ---------- Экспорт ---------- */
+
+.export__formats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.export__format {
+  flex-direction: column;
+  gap: 0;
+  padding: var(--s-2);
+}
+
+.export__hint {
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.form__parsed {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 18px;
 }
 
 /* ---------- Кнопки ---------- */

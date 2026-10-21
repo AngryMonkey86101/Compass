@@ -8,6 +8,7 @@
 - ввод координат: `56.8380, 60.6035`, `56,838; 60,6035`, `56°50′17″N 60°36′13″E` или ссылка из Google Карт, Яндекс Карт, Яндекс Навигатора, `geo:`
 - импорт точек из файлов **KML, KMZ, GPX, GeoJSON и CSV**: точки, а также первая вершина линий, полигонов и треков; одноимённые точки при повторном импорте заменяются
 - экспорт точек в KML, GPX, CSV и GeoJSON (на телефоне — через «Поделиться» или в «Загрузки»)
+- Android-приложение (APK/AAB) на Capacitor — см. ниже
 - сохранение текущего места как точки
 - режим «только компас»: двойное нажатие на циферблат скрывает интерфейс, остаются компас, курс и выбранная точка; экран не гаснет (если браузер поддерживает); выход — снова двойное нажатие, «Назад» на Android или Esc
 - главное меню (☰): «Навигация», «Мануал» (инструкция), «QR-код приложения» (ссылка на https://claude-compass.netlify.app/), «Поддержать проект» (скоро)
@@ -40,6 +41,18 @@
 QR-код со ссылкой на приложение генерирует `npm run qr` (адрес — в `src/config.js`) в `src/assets/app-qr.svg`.
 
 Иконки и заставки iOS генерирует `scripts/generate-pwa-assets.py` (нужен Pillow); он же печатает теги `apple-touch-startup-image` для `index.html`.
+
+## Android-приложение (Capacitor)
+
+Та же веб-версия, упакованная в APK/AAB через [Capacitor 8](https://capacitorjs.com). Проект — в `android/`, настройки — `capacitor.config.json` (идентификатор `io.github.angrymonkey86101.compass`; после первой публикации в магазине его не поменять).
+
+- **Сборка в GitHub Actions** (`.github/workflows/android.yml`): на каждый пуш собирается отладочный APK — вкладка Actions → запуск → Artifacts. Подписанные `app-release.apk` (RuStore) и `app-release.aab` (Google Play принимает только AAB) собираются, если в Settings → Secrets → Actions заданы `COMPASS_KEYSTORE_BASE64` (файл ключа `.jks` в base64), `COMPASS_KEYSTORE_PASSWORD`, `COMPASS_KEY_ALIAS`, `COMPASS_KEY_PASSWORD`.
+- **Локально** (нужны JDK 21 и Android SDK): `npm run android:sync`, затем `cd android && ./gradlew assembleDebug` или `npm run android:open` (Android Studio).
+- **Версия APK** берётся из `package.json`: `versionName` 1.9.0, `versionCode` 10900 (мажор × 10000 + минор × 100 + патч) — перед каждой загрузкой в магазин поднимайте версию.
+- **Иконки и заставка** генерируются из иконок PWA: `npm run android:assets`.
+- **Ключ подписи** создаётся один раз и хранится вне репозитория (`*.jks` в `.gitignore`): без него нельзя выпускать обновления. Пример: `keytool -genkeypair -v -keystore compass-release.jks -alias compass -keyalg RSA -keysize 2048 -validity 10000`.
+
+Отличия от веб-версии: экспорт отдаётся системному «Поделиться» (плагины Filesystem и Share), экран в режиме «только компас» не гаснет через плагин keep-awake, сервис-воркер и предложение установки не используются, кнопка «Назад» Android ходит по экранам приложения. Точки веб-версии и APK хранятся отдельно — перенести их можно экспортом и импортом.
 
 ## Запуск
 

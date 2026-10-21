@@ -1,0 +1,80 @@
+# Сборка Android-приложения (Capacitor). Отладочный APK собирается всегда — его можно
+# поставить на телефон для проверки. Подписанные релизные APK (RuStore) и AAB (Google Play)
+# собираются, только если в настройках репозитория заданы секреты подписи:
+#   COMPASS_KEYSTORE_BASE64   — файл ключа .jks в base64
+#   COMPASS_KEYSTORE_PASSWORD, COMPASS_KEY_ALIAS, COMPASS_KEY_PASSWORD
+# Готовые файлы — во вкладке Actions → запуск → Artifacts.
+name: Android
+
+on:
+  push:
+    branches: [claude/android-capacitor, main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KEYSTORE_BASE64: ${{ secrets.COMPASS_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Зависимости
+        run: npm ci
+
+      - name: Проверки
+        run: |
+          npm run lint
+          npm test
+
+      - name: Веб-сборка и копирование в Android-проект
+        run: npm run android:sync
+
+      - name: Отладочный APK
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Ключ подписи
+        if: env.KEYSTORE_BASE64 != ''
+        run: echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Релизные APK и AAB
+        if: env.KEYSTORE_BASE64 != ''
+        working-directory: android
+        env:
+          COMPASS_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          COMPASS_KEYSTORE_PASSWORD: ${{ secrets.COMPASS_KEYSTORE_PASSWORD }}
+          COMPASS_KEY_ALIAS: ${{ secrets.COMPASS_KEY_ALIAS }}
+          COMPASS_KEY_PASSWORD: ${{ secrets.COMPASS_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: compass-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        if: env.KEYSTORE_BASE64 != ''
+        with:
+          name: compass-release
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

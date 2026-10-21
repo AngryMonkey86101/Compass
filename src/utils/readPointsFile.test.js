@@ -92,8 +92,10 @@ describe('readPointsFile — определение формата по соде
   });
 
   it('понятные ошибки: XLSX, сетевая ссылка My Maps, чужой XML и JSON, нераспознанный текст', async () => {
-    const xlsx = new Uint8Array([0x50, 0x4b, 0x03, 0x04, ...new TextEncoder().encode('....xl/workbook.xml....')]);
-    await expect(readPointsFile(file(xlsx))).rejects.toThrow(/Excel/);
+    const xlsxZip = new JSZip();
+    xlsxZip.file('[Content_Types].xml', '<Types/>');
+    xlsxZip.file('xl/workbook.xml', '<workbook/>');
+    await expect(readPointsFile(file(await xlsxZip.generateAsync({ type: 'uint8array' })))).rejects.toThrow(/Excel/);
 
     const networkLink = '<kml xmlns="http://www.opengis.net/kml/2.2"><NetworkLink><name>Карта</name>' +
       '<Link><href>https://www.google.com/maps/d/kml?mid=1</href></Link></NetworkLink></kml>';
@@ -128,4 +130,62 @@ describe('экспорт → импорт без потерь', () => {
         .toEqual(points.map((p) => ({ name: p.name, lat: p.lat.toFixed(6), lon: p.lon.toFixed(6) })));
     });
   }
+});
+
+describe('исправления после ревью', () => {
+  const zip = async (files) => {
+    const z = new JSZip();
+    for (const [name, content] of Object.entries(files)) z.file(name, content);
+    return z.generateAsync({ type: 'uint8array' });
+  };
+
+  it('слишком большой файл отклоняется до чтения', async () => {
+    const huge = { size: 60 * 1024 * 1024, arrayBuffer: () => { throw new Error('не должен читаться'); } };
+    await expect(readPointsFile(huge)).rejects.toThrow(/слишком большой/);
+  });
+
+  it('KML в Windows-1251 внутри KMZ и KML с меткой BOM', async () => {
+    const kml = '<?xml version="1.0"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>Ёлка</name>' +
+      '<Point><coordinates>60.6035,56.838</coordinates></Point></Placemark></Document></kml>';
+    const kmz = await zip({ 'doc.kml': cp1251(kml) });
+    expect((await readPointsFile(file(kmz))).points[0].name).toBe('Ёлка');
+    const withBom = await zip({ 'doc.kml': '﻿' + kml });
+    expect((await readPointsFile(file(withBom))).points).toHaveLength(1);
+  });
+
+  it('архив: если первый кандидат без точек, берётся следующий', async () => {
+    const list = 'Title,Note,URL\nКафе,,http://maps.google.com/?cid=1\n';
+    const places = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature',
+      geometry: { type: 'Point', coordinates: [60.6035, 56.838] }, properties: { location: { name: 'Плотинка' } } }] });
+    const archive = await zip({ 'Takeout/Карты/Хочу посетить.csv': list, 'Takeout/Карты/Сохраненные места.json': places });
+    expect((await readPointsFile(file(archive))).points).toEqual([{ name: 'Плотинка', lat: 56.838, lon: 60.6035 }]);
+  });
+
+  it('CSV в UTF-16 (Excel «Юникод текст»)', async () => {
+    const text = 'Название\tШирота\tДолгота\r\nДом\t56,8\t60,6\r\n';
+    const bytes = new Uint8Array(2 + text.length * 2);
+    bytes[0] = 0xff;
+    bytes[1] = 0xfe;
+    for (let i = 0; i < text.length; i += 1) {
+      bytes[2 + i * 2] = text.charCodeAt(i) & 0xff;
+      bytes[3 + i * 2] = text.charCodeAt(i) >> 8;
+    }
+    expect((await readPointsFile(file(bytes))).points).toEqual([{ name: 'Дом', lat: 56.8, lon: 60.6 }]);
+  });
+
+  it('битый GeoJSON — понятная ошибка, а не TypeError', async () => {
+    await expect(readPointsFile(file('{"type":"FeatureCollection","features":{}}'))).rejects.toThrow(/нет точек/);
+  });
+
+  it('экспорт CSV: формула получает апостроф и импортируется обратно без изменений', async () => {
+    const points = [{ name: '=HYPERLINK("http://x","y")', lat: 56.838, lon: 60.6035 }];
+    const { content } = buildExport(points, 'csv');
+    expect(content).toContain(`'=HYPERLINK`);
+    expect((await readPointsFile(file(content))).points[0].name).toBe(points[0].name);
+  });
+
+  it('экспорт XML без запрещённых управляющих символов', () => {
+    const { content } = buildExport([{ name: 'A\u000BB', lat: 1, lon: 2 }], 'kml');
+    expect(content).toContain('<name>AB</name>');
+  });
 });

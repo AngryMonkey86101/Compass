@@ -2,10 +2,18 @@
 // без потерь (координаты — 6 знаков после точки, ≈10 см). Сборка файла синхронная: на iOS меню
 // «Поделиться» открывается только в том же нажатии, без ожиданий перед navigator.share.
 
+import { protectFormula } from './text';
+
 const DOC_NAME = 'Компас — точки';
 const fixed = (n) => n.toFixed(6);
 
+// Управляющие символы (кроме табуляции и переводов строки) в XML 1.0 запрещены даже в виде
+// сущностей: строгий разборщик отвергнет весь файл, поэтому они удаляются
+// eslint-disable-next-line no-control-regex
+const XML_INVALID = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
+
 const escapeXml = (value) => String(value)
+  .replace(XML_INVALID, '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
@@ -30,8 +38,10 @@ function toGpx(points, now = new Date()) {
     `${waypoints}\n</gpx>\n`;
 }
 
+// Ячейка CSV: кавычки при необходимости и апостроф перед текстом, похожим на формулу
+// (импорт Компаса его снимает — см. utils/text.js)
 const csvCell = (value) => {
-  const text = String(value);
+  const text = protectFormula(String(value));
   return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 

@@ -104,3 +104,25 @@ describe('pointsFromGeoJSON — Google Takeout и Конструктор Янд�
     expect(r.points.map((p) => p.name)).toEqual(['Без названия 1', 'Плотинка', 'Ганина Яма']);
   });
 });
+
+describe('исправления после ревью', () => {
+  it('точка ровно в 0,0 из обычного файла сохраняется, из Google Takeout — пропускается', () => {
+    expect(pointsFromGeoJSON({ features: [point('Ноль', [0, 0])] }).points).toEqual([{ name: 'Ноль', lat: 0, lon: 0 }]);
+    const takeout = { features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] },
+      properties: { google_maps_url: 'http://maps.google.com/?cid=1', location: { name: 'Кафе' } } }] };
+    expect(pointsFromGeoJSON(takeout).skipped).toBe(1);
+  });
+
+  it('битый GeoJSON не роняет разбор', () => {
+    expect(pointsFromGeoJSON({ type: 'FeatureCollection', features: {} })).toEqual({ points: [], skipped: 0, skipNotes: [] });
+    expect(firstCoordinate({ type: 'GeometryCollection', geometries: {} })).toBeNull();
+    let deep = [60, 56];
+    for (let i = 0; i < 20000; i += 1) deep = [deep];
+    expect(firstCoordinate({ type: 'Point', coordinates: deep })).toBeNull();
+  });
+
+  it('повторы имён получают свободный суффикс', () => {
+    const { points } = pointsFromGeoJSON({ features: [point('A', [1, 1]), point('A', [2, 2]), point('A (2)', [3, 3])] });
+    expect(points.map((p) => p.name)).toEqual(['A', 'A (2)', 'A (2) (2)']);
+  });
+});

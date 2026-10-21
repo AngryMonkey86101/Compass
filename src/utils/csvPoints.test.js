@@ -88,3 +88,21 @@ describe('pointsFromCsv', () => {
     expect(pointsFromCsv('').recognized).toBe(false);
   });
 });
+
+describe('исправления после ревью', () => {
+  it('номер или код рядом с координатами не принимается за широту', () => {
+    expect(pointsFromCsv('1;56.838;60.6035;Плотинка').points).toEqual([{ name: 'Плотинка', lat: 56.838, lon: 60.6035 }]);
+    expect(pointsFromCsv('Плотинка;2;56.838;60.6035').points).toEqual([{ name: 'Плотинка', lat: 56.838, lon: 60.6035 }]);
+  });
+
+  it('точка с названием «Name» в первой строке файла без заголовка не теряется', () => {
+    expect(pointsFromCsv('Name;56.8;60.6\nB;56.9;60.7').points).toEqual([
+      { name: 'Name', lat: 56.8, lon: 60.6 },
+      { name: 'B', lat: 56.9, lon: 60.7 }
+    ]);
+  });
+
+  it('апостроф защиты от формул снимается при импорте', () => {
+    expect(pointsFromCsv('Широта;Долгота;Описание;Подпись\n56.8;60.6;;\'=СУММ(A1)\n').points[0].name).toBe('=СУММ(A1)');
+  });
+});

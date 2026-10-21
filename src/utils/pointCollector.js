@@ -10,6 +10,7 @@ const MAX_LINES_SHOWN = 5;
 function createPointCollector() {
   const points = [];
   const seen = new Map();
+  const used = new Set();
   const skips = new Map();
   let unnamedCount = 0;
   let skipped = 0;
@@ -30,9 +31,14 @@ function createPointCollector() {
     }
     const trimmed = typeof rawName === 'string' ? rawName.trim() : '';
     let name = trimmed || `${UNNAMED} ${++unnamedCount}`;
-    const times = (seen.get(name) ?? 0) + 1;
-    seen.set(name, times);
-    if (times > 1) name = `${name} (${times})`;
+    if (used.has(name)) {
+      // суффикс подбирается до свободного: в файле уже может быть точка «A (2)»
+      let n = (seen.get(name) ?? 1) + 1;
+      while (used.has(`${name} (${n})`)) n += 1;
+      seen.set(name, n);
+      name = `${name} (${n})`;
+    }
+    used.add(name);
     points.push({ name, lat, lon });
     return true;
   };

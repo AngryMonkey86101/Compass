@@ -9,18 +9,35 @@ const FORMAT_HINT = 'Формат: «56.8380, 60.6035», «56°50′17″N 60°3
 const SHORT_LINK_ERROR = 'Короткую ссылку (maps.app.goo.gl, yandex.ru/maps/-/…) браузер раскрыть не может. ' +
   'Откройте её, нажмите на точку и скопируйте координаты';
 const NO_COORDS_IN_LINK = 'В ссылке нет координат. Откройте точку в картах и скопируйте её координаты';
+const TOO_LONG_ERROR = 'Слишком длинный текст. Вставьте только координаты или ссылку';
+
+// Ограничения длины: координаты и ссылки карт короче, а разбор очень длинного текста
+// (например, ячейки CSV из чужого файла) не должен подвешивать приложение
+const MAX_TEXT_LENGTH = 2000;
+const MAX_DMS_LENGTH = 300;
 
 const URL_PATTERN = /(?:https?:\/\/|yandexnavi:\/\/)[^\s<>"«»]+/i;
 // geo: — до конца строки: метка в скобках может содержать пробелы («(Ганина Яма)»)
 const GEO_PATTERN = /geo:[^\n]+/i;
 
-// Хвостовая пунктуация после ссылки в тексте; «)» — только если скобка не парная
+// Хвостовая пунктуация после ссылки в тексте; «)» — только если скобка не парная.
+// Скобки считаются один раз, затем хвост срезается за один проход.
 const trimUrl = (url) => {
-  let result = url.trim().replace(/[.,;]+$/, '');
-  while (result.endsWith(')') && (result.match(/\(/g) ?? []).length < (result.match(/\)/g) ?? []).length) {
-    result = result.slice(0, -1).replace(/[.,;]+$/, '');
+  const text = url.trim();
+  let unbalanced = (text.split(')').length - 1) - (text.split('(').length - 1);
+  let end = text.length;
+  while (end > 0) {
+    const ch = text[end - 1];
+    if (ch === '.' || ch === ',' || ch === ';') {
+      end -= 1;
+    } else if (ch === ')' && unbalanced > 0) {
+      end -= 1;
+      unbalanced -= 1;
+    } else {
+      break;
+    }
   }
-  return result;
+  return text.slice(0, end);
 };
 const NUMBER = String.raw`[-+]?\d+(?:\.\d+)?`;
 const PAIR_PATTERN = new RegExp(`^\\s*(${NUMBER})\\s*,\\s*(${NUMBER})`);
@@ -108,7 +125,16 @@ function fromGoogle(url) {
     if (found) return named(found);
   }
 
-  // /maps/search/56.8,+60.6, /maps/place/56.8,60.6, /maps/dir/…/56.8,60.6 — последний сегмент с координатами
+  // Маршрут /maps/dir/откуда/куда/@…: цель — последняя точка маршрута. Если она задана названием,
+  // координат цели в ссылке нет: ни начало маршрута, ни центр экрана (@) ими не являются
+  const dirIndex = segments.indexOf('dir');
+  if (dirIndex >= 0) {
+    const stops = segments.slice(dirIndex + 1).filter((s) => !s.startsWith('@') && !s.startsWith('data='));
+    const target = stops.length ? parseCoordinates(stops[stops.length - 1]) : null;
+    return target && target.lat !== undefined ? point(target.lat, target.lon) : null;
+  }
+
+  // /maps/search/56.8,+60.6, /maps/place/56.8,60.6 — последний сегмент с координатами
   const fromSegment = segments
     .filter((s) => !s.startsWith('@'))
     .map((s) => parseCoordinates(s))
@@ -137,6 +163,7 @@ function fromGeoUri(text) {
 // Координаты из ссылки: { lat, lon, name? }, { error } для коротких ссылок или null
 function parseMapUrl(text) {
   const raw = String(text ?? '').trim();
+  if (raw.length > MAX_TEXT_LENGTH) return null;
   if (/^geo:/i.test(raw)) return fromGeoUri(raw);
 
   let url;
@@ -159,8 +186,16 @@ function parseMapUrl(text) {
   return hashMap ? point(parseFloat(hashMap[1]), parseFloat(hashMap[2])) : null;
 }
 
-// Градусы, минуты, секунды: 56°50'16.8"N 60°36'12.6"E, N 56°50.28' E 60°36.21', 56°50′17″ с.ш. 60°36′13″ в.д.
+// Градусы, минуты, секунды: 56°50'16.8"N 60°36'12.6"E, N 56°50.28' E 60°36.21', 56°50′17″ с.ш. 60°36′13″ в.д.,
+// -33°52'10" 151°12'30". Буква полушария засчитывается, только если она не часть слова:
+// в «Moscow 55°45′N» буква w относится к слову, а не к долготе. Символ перед буквой проверяется
+// по индексу совпадения, а не ретроспективной проверкой (?<=…): её не понимает Safari до 16.4,
+// и вся сборка перестала бы запускаться на старых iPhone.
+const LETTER = /[A-Za-zА-Яа-яЁё]/;
+const DMS_PART = /([NSEW])?\s*([-−]?)(\d+(?:\.\d+)?)\s*°(?:\s*(\d+(?:\.\d+)?)\s*')?(?:\s*(\d+(?:\.\d+)?)\s*")?(?:\s*([NSEW])(?![A-Za-zА-Яа-яЁё]))?/gi;
+
 function parseDms(text) {
+  if (String(text ?? '').length > MAX_DMS_LENGTH) return null;
   const normalized = String(text ?? '')
     .replace(/[′’‘`´]/g, "'")
     .replace(/[″”“]|''/g, '"')
@@ -168,14 +203,16 @@ function parseDms(text) {
     .replace(/в\.?\s*д\.?/gi, 'E').replace(/з\.?\s*д\.?/gi, 'W')
     .replace(/(\d),(\d)/g, '$1.$2');
 
-  const part = /([NSEW])?\s*(\d+(?:\.\d+)?)\s*°\s*(?:(\d+(?:\.\d+)?)\s*'\s*)?(?:(\d+(?:\.\d+)?)\s*"\s*)?([NSEW])?/gi;
   const parts = [];
-  for (const match of normalized.matchAll(part)) {
-    const [, before = '', deg, min = '0', sec = '0', after = ''] = match;
+  for (const match of normalized.matchAll(DMS_PART)) {
+    const [, rawBefore = '', minus, deg, min = '0', sec = '0', after = ''] = match;
+    // буква перед градусами — полушарие, только если перед ней не буква (иначе это конец слова)
+    const before = rawBefore && match.index > 0 && LETTER.test(normalized[match.index - 1]) ? '' : rawBefore;
     const minutes = parseFloat(min);
     const seconds = parseFloat(sec);
     if (minutes >= 60 || seconds >= 60) return null;
-    parts.push({ value: parseFloat(deg) + minutes / 60 + seconds / 3600, before: before.toUpperCase(), after: after.toUpperCase() });
+    const value = parseFloat(deg) + minutes / 60 + seconds / 3600;
+    parts.push({ value: minus ? -value : value, before: before.toUpperCase(), after: after.toUpperCase() });
   }
   if (parts.length !== 2) return null;
   // «N 40°45' W 73°59'»: буква W захватывается хвостом первой части, хотя относится ко второй
@@ -189,8 +226,9 @@ function parseDms(text) {
   let [first, second] = parts;
   const isLon = (p) => p.hemisphere === 'E' || p.hemisphere === 'W';
   if (isLon(first) && !isLon(second)) [first, second] = [second, first];
-  const sign = (p) => (p.hemisphere === 'S' || p.hemisphere === 'W' ? -1 : 1);
-  return point(sign(first) * first.value, sign(second) * second.value);
+  // S и W делают значение отрицательным; явный минус без буквы тоже сохраняется
+  const signed = (p) => (p.hemisphere === 'S' || p.hemisphere === 'W' ? -Math.abs(p.value) : p.value);
+  return point(signed(first), signed(second));
 }
 
 // Главный разбор поля ввода: ссылка (в том числе внутри текста «Название — https://…»),
@@ -198,6 +236,7 @@ function parseDms(text) {
 function parseLocationText(input) {
   const text = String(input ?? '').trim();
   if (!text) return { error: 'Введите координаты или вставьте ссылку. ' + FORMAT_HINT };
+  if (text.length > MAX_TEXT_LENGTH) return { error: TOO_LONG_ERROR };
 
   const urlMatch = URL_PATTERN.exec(text) ?? GEO_PATTERN.exec(text);
   if (urlMatch) {

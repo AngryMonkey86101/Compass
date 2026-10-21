@@ -1,5 +1,6 @@
 import { createPointCollector } from './pointCollector';
 import { parseLocationText, parseMapUrl } from './locationText';
+import { firstLine, unprotectFormula } from './text';
 
 // Импорт точек из CSV: таблицы Excel / Google Таблиц, экспорт Конструктора карт Яндекса
 // («Широта;Долгота;Описание;Подпись;Номер метки»), списки Google Takeout («Title,Note,URL,…»)
@@ -56,10 +57,19 @@ function parseDelimited(text, delimiter) {
 }
 
 // Разделитель по первой непустой строке: табуляция, затем «;» (не встречается в числах), иначе «,»
+// (ищется без разбиения всего файла на строки)
 function detectDelimiter(text) {
-  const firstLine = text.split(/\r?\n/).find((l) => l.trim() !== '') ?? '';
-  if (firstLine.includes('\t')) return '\t';
-  if (firstLine.includes(';')) return ';';
+  let start = 0;
+  let line = '';
+  while (start < text.length) {
+    const end = text.indexOf('\n', start);
+    line = text.slice(start, end === -1 ? text.length : end);
+    if (line.trim() !== '') break;
+    if (end === -1) break;
+    start = end + 1;
+  }
+  if (line.includes('\t')) return '\t';
+  if (line.includes(';')) return ';';
   return ',';
 }
 
@@ -72,9 +82,11 @@ const HEADER_KEYS = {
   description: ['описание', 'description', 'note', 'заметка', 'комментарий', 'comment']
 };
 
-const normalizeHeader = (cell) => cell.trim().toLowerCase().replace(/^\uFEFF/, '').replace(/\s+/g, ' ');
+const normalizeHeader = (cell) => cell.trim().toLowerCase().replace(/\s+/g, ' ');
 
-// Номера столбцов по заголовку или null, если первая строка — не заголовок
+// Номера столбцов по заголовку или null, если первая строка — не заголовок.
+// Строка, где из ролей нашлось только название, — заголовок, лишь если в ней нет координат:
+// иначе это точка, которую назвали «Name» или «Подпись», и её нельзя потерять.
 function detectColumns(fields) {
   const columns = {};
   fields.forEach((cell, index) => {
@@ -83,9 +95,11 @@ function detectColumns(fields) {
       if (columns[role] === undefined && names.includes(key)) columns[role] = index;
     }
   });
-  const known = columns.lat !== undefined || columns.lon !== undefined || columns.coords !== undefined ||
-    columns.url !== undefined || columns.name !== undefined;
-  return known ? columns : null;
+  const hasLocation = columns.lat !== undefined || columns.lon !== undefined || columns.coords !== undefined ||
+    columns.url !== undefined;
+  if (hasLocation) return columns;
+  if (columns.name !== undefined && !pointFromBareRow(fields)) return columns;
+  return null;
 }
 
 const parseNumber = (cell) => {
@@ -93,19 +107,28 @@ const parseNumber = (cell) => {
   return /^[-+]?\d+(?:\.\d+)?$/.test(text) ? parseFloat(text) : null;
 };
 
-// Первая строка описания годится как запасное название
-const firstLine = (text) => String(text ?? '').trim().split(/\r?\n/)[0].trim().slice(0, 80);
+const hasFraction = (cell) => /[.,]\d/.test(String(cell));
 
 // Строка без заголовка: два числа подряд — широта и долгота, первый текст — название.
+// Номер или код в соседнем столбце («1;56.838;60.6035») тоже число, поэтому из пар соседних
+// чисел предпочитается та, где оба числа дробные, — так пишут координаты.
 // Если чисел нет, пробуем каждую ячейку как координаты или ссылку.
 function pointFromBareRow(fields) {
+  let pair = null;
   for (let i = 0; i + 1 < fields.length; i += 1) {
     const lat = parseNumber(fields[i]);
     const lon = parseNumber(fields[i + 1]);
-    if (lat !== null && lon !== null) {
-      const name = fields.find((cell, j) => j !== i && j !== i + 1 && cell.trim() && parseNumber(cell) === null);
-      return { lat, lon, name: name ?? '' };
+    if (lat === null || lon === null) continue;
+    if (hasFraction(fields[i]) && hasFraction(fields[i + 1])) {
+      pair = { i, lat, lon };
+      break;
     }
+    if (!pair) pair = { i, lat, lon };
+  }
+  if (pair) {
+    const { i, lat, lon } = pair;
+    const name = fields.find((cell, j) => j !== i && j !== i + 1 && cell.trim() && parseNumber(cell) === null);
+    return { lat, lon, name: name ? unprotectFormula(name.trim()) : '' };
   }
   for (const cell of fields) {
     const found = parseLocationText(cell);
@@ -119,7 +142,7 @@ function pointFromBareRow(fields) {
 
 function pointFromColumns(fields, columns) {
   const cell = (role) => (columns[role] === undefined ? '' : fields[columns[role]] ?? '');
-  const name = cell('name').trim() || firstLine(cell('description'));
+  const name = unprotectFormula(cell('name').trim()) || firstLine(cell('description'));
 
   if (columns.lat !== undefined && columns.lon !== undefined) {
     const lat = parseNumber(cell('lat'));

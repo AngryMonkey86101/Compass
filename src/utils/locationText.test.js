@@ -125,3 +125,37 @@ describe('parseMapUrl — прочие', () => {
     expect(parseLocationText('https://example.com/page').error).toMatch(/нет координат/);
   });
 });
+
+describe('исправления после ревью', () => {
+  it('буква полушария не берётся из конца слова перед градусами', () => {
+    const moscow = parseLocationText('Moscow 55°45′N 37°37′E');
+    expect(moscow.lat).toBeCloseTo(55.75, 6);
+    expect(moscow.lon).toBeCloseTo(37.6167, 3);
+    const times = parseLocationText('Times Square 40°45′29″N 73°59′08″W');
+    expect(times.lat).toBeCloseTo(40.758, 3);
+    expect(times.lon).toBeCloseTo(-73.9856, 3);
+    expect(parseLocationText('Lisbon 38°43′N 9°08′W').lon).toBeCloseTo(-9.1333, 3);
+  });
+
+  it('минус в градусах и полушарие без пробела перед следующим числом', () => {
+    const r = parseDms('-33°52\'10" 151°12\'30"');
+    expect(r.lat).toBeCloseTo(-33.8694, 3);
+    expect(r.lon).toBeCloseTo(151.2083, 3);
+    const tight = parseDms('56°50\'16.8"N60°36\'12.6"E');
+    expect(tight.lat).toBeCloseTo(56.838, 6);
+    expect(tight.lon).toBeCloseTo(60.6035, 6);
+  });
+
+  it('маршрут Google: цель — последняя точка, начало маршрута целью не считается', () => {
+    expect(parseMapUrl('https://www.google.com/maps/dir/56.1,60.1/%D0%93%D0%B0%D0%BD%D0%B8%D0%BD%D0%B0+%D0%AF%D0%BC%D0%B0/@56.9,60.5,12z/data=!4m2')).toBeNull();
+    expect(parseMapUrl('https://www.google.com/maps/dir/Home/56.838,60.6035/@56.9,60.5,12z')).toEqual({ lat: LAT, lon: LON });
+  });
+
+  it('длинный ввод не подвешивает разбор', () => {
+    const started = Date.now();
+    expect(parseLocationText('https://x.ru/' + ')'.repeat(1900)).error).toBeTruthy();
+    expect(parseLocationText('a ' + '1'.repeat(1900) + 'x°').error).toBeTruthy();
+    expect(parseLocationText('x'.repeat(5000)).error).toMatch(/длинный/);
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+});

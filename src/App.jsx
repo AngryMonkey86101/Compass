@@ -6,6 +6,7 @@ import ManualScreen from './components/ManualScreen';
 import QrScreen from './components/QrScreen';
 import SupportScreen from './components/SupportScreen';
 import useRoute from './hooks/useRoute';
+import { isNativeApp } from './utils/platform';
 
 const SCREENS = {
   menu: MainMenu,
@@ -18,7 +19,8 @@ const SCREENS = {
 // экранах он скрыт, но GPS и датчик продолжают работать. Баннер обновления — вне обработчика
 // сбоев: если новая версия исправляет сбой, кнопка «Обновить» должна оставаться доступной.
 // Кнопка «Перезагрузить» на экране сбоя ожидающую версию не включает: при registerType 'prompt'
-// сервис-воркер ждёт явного обновления.
+// сервис-воркер ждёт явного обновления. В APK сервис-воркер не регистрируется вовсе:
+// новые версии приходят через магазин, а устаревший кэш мешал бы обновлению.
 function App() {
   const route = useRoute();
   const Other = SCREENS[route];
@@ -29,7 +31,7 @@ function App() {
         <Compass isFocus={route === 'focus'} hidden={Boolean(Other)} />
         {Other && <Other />}
       </ErrorBoundary>
-      <UpdatePrompt />
+      {!isNativeApp && <UpdatePrompt />}
     </>
   );
 }

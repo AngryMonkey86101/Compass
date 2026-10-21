@@ -1,8 +1,25 @@
 import { useEffect } from 'react';
+import { isNativeApp } from '../utils/platform';
+
+// В APK — нативный плагин keep-awake: Screen Wake Lock API в Android WebView работает не везде
+const useNativeKeepAwake = (active) => {
+  useEffect(() => {
+    if (!active) return undefined;
+    let cancelled = false;
+    const plugin = import('@capacitor-community/keep-awake').then(({ KeepAwake }) => {
+      if (!cancelled) KeepAwake.keepAwake().catch(() => {});
+      return KeepAwake;
+    });
+    return () => {
+      cancelled = true;
+      plugin.then((KeepAwake) => KeepAwake.allowSleep().catch(() => {}), () => {});
+    };
+  }, [active]);
+};
 
 // Не даёт экрану гаснуть, пока active (Screen Wake Lock API). Система снимает блокировку,
 // когда вкладка уходит в фон, — при возврате запрашиваем снова. Без поддержки API — ничего не делает.
-const useWakeLock = (active) => {
+const useWebWakeLock = (active) => {
   useEffect(() => {
     if (!active || !('wakeLock' in navigator)) return undefined;
     let sentinel = null;
@@ -37,5 +54,8 @@ const useWakeLock = (active) => {
     };
   }, [active]);
 };
+
+// Платформа не меняется во время работы, поэтому выбор хука постоянен и правила хуков соблюдены
+const useWakeLock = isNativeApp ? useNativeKeepAwake : useWebWakeLock;
 
 export default useWakeLock;

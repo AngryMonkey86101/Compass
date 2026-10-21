@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
+import { isNativeApp } from '../utils/platform';
 
 const DISMISS_KEY = 'compassInstallHintDismissed';
 
-// Приложение уже открыто с главного экрана (отдельным окном, без интерфейса браузера)
+// Приложение уже установлено: открыто с главного экрана (отдельным окном), это APK
+// или обёртка TWA (её страницу открывает приложение Android — referrer android-app://…)
 const isStandaloneNow = () =>
+  isNativeApp ||
+  document.referrer.startsWith('android-app://') ||
   (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches) ||
   window.navigator.standalone === true;
 
@@ -40,7 +44,7 @@ const useInstallPrompt = () => {
       setDeferredPrompt(null);
     };
     const media = typeof window.matchMedia === 'function' ? window.matchMedia('(display-mode: standalone)') : null;
-    const handleDisplayMode = (event) => setIsInstalled(event.matches || window.navigator.standalone === true);
+    const handleDisplayMode = () => setIsInstalled(isStandaloneNow());
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleInstalled);

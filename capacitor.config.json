@@ -1,0 +1,14 @@
+{
+  "appId": "io.github.angrymonkey86101.compass",
+  "appName": "Компас",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK"
+    }
+  }
+}

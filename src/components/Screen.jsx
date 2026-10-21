@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
+import Version from './Version';
 
 // Каркас вспомогательного экрана (меню, мануал, QR-код): заголовок с кнопкой назад.
 // При открытии экран прокручивается к началу, фокус переходит на заголовок — экранный диктор
 // объявит новый экран, а клавиатура начнёт с его начала.
-export default function Screen({ title, backLabel, onBack, children, className = '' }) {
+export default function Screen({ title, backLabel, onBack, children }) {
   const titleRef = useRef(null);
 
   useEffect(() => {
@@ -12,8 +13,8 @@ export default function Screen({ title, backLabel, onBack, children, className =
   }, []);
 
   return (
-    <main className={`app screen ${className}`}>
-      <header className="status-bar screen__header">
+    <main className="app">
+      <header className="status-bar">
         <div className="status-bar__brand">
           {onBack && (
             <button type="button" className="btn btn--icon btn--ghost" aria-label={backLabel} onClick={onBack}>
@@ -26,7 +27,7 @@ export default function Screen({ title, backLabel, onBack, children, className =
         </div>
       </header>
       <div className="screen__body">{children}</div>
-      <p className="version">Alpha-Claude v{import.meta.env.VITE_APP_VERSION}</p>
+      <Version />
     </main>
   );
 }

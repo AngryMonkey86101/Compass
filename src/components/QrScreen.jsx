@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Screen from './Screen';
 import { goBack } from '../utils/router';
 import { APP_URL } from '../config';
@@ -19,8 +19,14 @@ export default function QrScreen() {
     } catch {
       setCopyState('error');
     }
-    setTimeout(() => setCopyState('idle'), COPY_RESET_MS);
   };
+
+  // Надпись «Скопировано» возвращается к «Скопировать» через 2 с; при уходе с экрана таймер снимается
+  useEffect(() => {
+    if (copyState === 'idle') return undefined;
+    const timer = setTimeout(() => setCopyState('idle'), COPY_RESET_MS);
+    return () => clearTimeout(timer);
+  }, [copyState]);
 
   const handleShare = () => {
     navigator.share({ title: 'Компас', url: APP_URL }).catch(() => {

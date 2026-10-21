@@ -1,9 +1,23 @@
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import AddLocationForm from './AddLocationForm';
 import ImportPanel from './ImportPanel';
 import ExportPanel from './ExportPanel';
 import useFileImport from '../hooks/useFileImport';
 
+// Строка списка получает только простые значения: при каждом обновлении GPS объекты точек
+// создаются заново, и без memo перерисовывался бы весь список (при сотнях точек — рывки стрелки).
+// Перерисовываются только строки, у которых изменился текст расстояния или выбор.
+const LocationRow = memo(function LocationRow({ id, label, name, distance, selected, onSelect }) {
+  return (
+    <li>
+      <button type="button" className="loc-item" aria-pressed={selected} onClick={() => onSelect(id)}>
+        <span className="marker" aria-hidden="true">{label}</span>
+        <span className="loc-item__name">{name}</span>
+        <span className="loc-item__distance mono">{distance ?? '—'}</span>
+      </button>
+    </li>
+  );
+});
 
 // Список точек с буквенными маркерами и дистанцией до каждой; «+» раскрывает форму новой точки,
 // удаление выбранной — с подтверждением прямо в панели (window.confirm блокируется в PWA);
@@ -43,10 +57,11 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
     setOpenPanel((current) => (current === panel ? null : panel));
   };
 
-  const handleSelect = (id) => {
+  // Стабильная функция для memo-строк (onSelect из useLocations тоже стабилен)
+  const handleSelect = useCallback((id) => {
     setConfirmId(null);
     onSelect(id);
-  };
+  }, [onSelect]);
 
   const handleDelete = () => {
     if (isConfirming) onDelete(selected.id);
@@ -103,18 +118,15 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
       ) : (
         <ul className="loc-list">
           {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                className="loc-item"
-                aria-pressed={item.id === selectedId}
-                onClick={() => handleSelect(item.id)}
-              >
-                <span className="marker" aria-hidden="true">{item.label}</span>
-                <span className="loc-item__name">{item.name}</span>
-                <span className="loc-item__distance mono">{item.distance ?? '—'}</span>
-              </button>
-            </li>
+            <LocationRow
+              key={item.id}
+              id={item.id}
+              label={item.label}
+              name={item.name}
+              distance={item.distance}
+              selected={item.id === selectedId}
+              onSelect={handleSelect}
+            />
           ))}
         </ul>
       )}

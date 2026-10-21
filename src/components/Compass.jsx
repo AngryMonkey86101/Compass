@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useEffect, useState } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { calculateDistance, formatDistance, calculateBearing } from '../utils/geoUtils';
 import { indexToLetters } from '../utils/labels';
 import { buildExport, EXPORT_FORMATS } from '../utils/exportPoints';
@@ -16,6 +16,7 @@ import LocationList from './LocationList';
 import CoordsPanel from './CoordsPanel';
 import EventFeed from './EventFeed';
 import InstallBanner from './InstallBanner';
+import Version from './Version';
 
 // Подсказка о выходе при каждом входе в режим: в установленном на iPhone приложении нет
 // кнопки и жеста «Назад», двойное нажатие — единственный выход, и его легко забыть
@@ -45,7 +46,10 @@ export default function Compass({ isFocus = false, hidden = false }) {
     return calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon);
   }, [coords, selectedLocation]);
 
-  const [showHint, setShowHint] = useState(false);
+  // Номер показа подсказки: каждый вход в режим — новый номер и новый таймер на 3 с
+  // (при повторном входе подсказка не исчезает раньше времени); 0 — подсказка скрыта
+  const [hintShow, setHintShow] = useState(0);
+  const showHint = isFocus && hintShow > 0;
   useWakeLock(isFocus && !hidden);
 
   const toggleFocus = useCallback(() => {
@@ -54,14 +58,23 @@ export default function Compass({ isFocus = false, hidden = false }) {
       return;
     }
     navigate('focus');
-    setShowHint(true);
+    setHintShow((n) => n + 1);
   }, [isFocus]);
 
   useEffect(() => {
-    if (!showHint) return undefined;
-    const timer = setTimeout(() => setShowHint(false), FOCUS_HINT_MS);
+    if (!hintShow) return undefined;
+    const timer = setTimeout(() => setHintShow(0), FOCUS_HINT_MS);
     return () => clearTimeout(timer);
-  }, [showHint]);
+  }, [hintShow]);
+
+  // После возврата с меню или мануала фокус — на кнопке меню, а не на <body>:
+  // клавиатура и экранный диктор продолжают с того места, откуда ушли
+  const menuButtonRef = useRef(null);
+  const wasHiddenRef = useRef(hidden);
+  useEffect(() => {
+    if (wasHiddenRef.current && !hidden) menuButtonRef.current?.focus({ preventScroll: true });
+    wasHiddenRef.current = hidden;
+  }, [hidden]);
 
   // Esc на компьютере выходит из режима «только компас»
   useEffect(() => {
@@ -121,6 +134,7 @@ export default function Compass({ isFocus = false, hidden = false }) {
         isSensorOn={isPermissionGranted}
         sensorError={orientError}
         onMenu={() => navigate('menu')}
+        menuButtonRef={menuButtonRef}
       />
 
       <InstallBanner />
@@ -162,7 +176,7 @@ export default function Compass({ isFocus = false, hidden = false }) {
               )}
             </p>
           )}
-          {isFocus && showHint && (
+          {showHint && (
             <p className="focus-hint" role="status">Двойное нажатие на компас — вернуть интерфейс</p>
           )}
         </div>
@@ -184,7 +198,7 @@ export default function Compass({ isFocus = false, hidden = false }) {
         </div>
       </div>
 
-      <p className="version">Alpha-Claude v{import.meta.env.VITE_APP_VERSION}</p>
+      <Version />
       <EventFeed events={events} />
     </main>
   );

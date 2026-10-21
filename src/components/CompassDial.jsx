@@ -128,11 +128,13 @@ function CompassDial({ subscribeHeading, bearing, targetLabel, onDoubleTap, isFo
 
   const hidden = bearing === null;
 
-  // Двойное нажатие: только основная кнопка мыши или касание; с клавиатуры — Enter или пробел
-  const tapHandlers = onDoubleTap ? {
+  // Двойное нажатие: только основная кнопка мыши или касание; с клавиатуры — Enter или пробел.
+  // Экранный диктор активирует элемент одиночным синтетическим кликом (detail === 0) —
+  // он тоже переключает режим. Обычный клик пальцем или мышью (detail ≥ 1) не переключает.
+  const tapHandlers = {
     role: 'button',
     tabIndex: 0,
-    'aria-label': isFocus ? 'Вернуть интерфейс (двойное нажатие)' : 'Только компас (двойное нажатие)',
+    'aria-label': 'Режим «только компас» (двойное нажатие)',
     'aria-pressed': isFocus,
     onPointerDown: (e) => {
       if (e.isPrimary && e.button === 0) tapRef.current.down(e.clientX, e.clientY);
@@ -141,17 +143,20 @@ function CompassDial({ subscribeHeading, bearing, targetLabel, onDoubleTap, isFo
       if (e.isPrimary && tapRef.current.up(e.clientX, e.clientY, e.timeStamp)) onDoubleTap();
     },
     onPointerCancel: () => tapRef.current.cancel(),
+    onClick: (e) => {
+      if (e.detail === 0) onDoubleTap();
+    },
     onKeyDown: (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         onDoubleTap();
       }
     }
-  } : {};
+  };
 
   return (
     <div className="dial-section">
-      <div className={`dial-stage${onDoubleTap ? ' dial-stage--tappable' : ''}`} {...tapHandlers}>
+      <div className="dial-stage dial-stage--tappable" {...tapHandlers}>
         <span className="dial-section__crosshair-h" aria-hidden="true" />
         <span className="dial-section__crosshair-v" aria-hidden="true" />
 

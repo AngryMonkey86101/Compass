@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import defaultLocationsData from '../data/locations.json';
 import { isValidCoordinates } from '../utils/geoUtils';
 
@@ -105,9 +105,9 @@ const useLocations = () => {
     }
   };
 
-  const selectLocation = (id) => {
-    if (savedLocations.some((loc) => loc.id === id)) setSelectedId(id);
-  };
+  // Стабильная функция: строки списка точек мемоизированы и не должны перерисовываться из-за неё.
+  // id приходит только из отрисованного списка, отдельная проверка существования не нужна.
+  const selectLocation = useCallback((id) => setSelectedId(id), []);
 
   return {
     savedLocations,

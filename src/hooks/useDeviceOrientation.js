@@ -15,8 +15,13 @@ const normalize = (angle) => ((angle % 360) + 360) % 360;
 // Направление не хранится в React-состоянии: датчик присылает до ~60 значений
 // в секунду, и перерисовка на каждое давала рывки. Вместо этого подписчики
 // (циферблат) получают сырое значение и сами плавно анимируют его.
+// Разрешение нужно только на iOS (DeviceOrientationEvent.requestPermission). На Android и в APK
+// датчик доступен сразу — компас включается без кнопки «Включить компас» при каждом запуске.
+const needsPermission = () =>
+  typeof DeviceOrientationEvent === 'undefined' || typeof DeviceOrientationEvent.requestPermission === 'function';
+
 const useDeviceOrientation = () => {
-  const [isPermissionGranted, setIsPermissionGranted] = useState(false);
+  const [isPermissionGranted, setIsPermissionGranted] = useState(() => !needsPermission());
   const [error, setError] = useState(null);
   const errorRef = useRef(null);
   const listenersRef = useRef(new Set());

@@ -34,7 +34,7 @@ const ITEMS = [
 // Главное меню: четыре плитки. Закрытие возвращает на навигацию.
 export default function MainMenu() {
   return (
-    <Screen title="Меню" backLabel="Закрыть меню" onBack={() => navigate('nav')} className="screen--menu">
+    <Screen title="Меню" backLabel="Закрыть меню" onBack={() => navigate('nav')}>
       <nav aria-label="Главное меню">
         <ul className="menu">
           {ITEMS.map(({ route, title, hint }) => (

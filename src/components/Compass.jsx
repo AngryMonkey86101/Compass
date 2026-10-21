@@ -107,7 +107,7 @@ export default function Compass() {
         </div>
       </div>
 
-      <p className="version">Alpha-Claude v{import.meta.env.VITE_APP_VERSION}</p>
+      <p className="version">v{import.meta.env.VITE_APP_VERSION}</p>
       <EventFeed events={events} />
     </main>
   );

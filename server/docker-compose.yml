@@ -1,0 +1,40 @@
+# Запуск на сервере: docker compose up -d --build  (настройки — в файле .env рядом)
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+    volumes:
+      - data:/data
+    # Порт наружу не открыт: к API ходит только Caddy. Поэтому серверу можно доверять
+    # заголовку X-Forwarded-For (TRUST_PROXY=1 в образе)
+    expose:
+      - "8080"
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+  caddy:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Укажите DOMAIN в файле .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging: *logging
+
+volumes:
+  data:
+  caddy_data:
+  caddy_config:

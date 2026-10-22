@@ -25,5 +25,16 @@
   "ignorePatterns": [
     "dist/**",
     "android/**"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "server/**/*.js"
+      ],
+      "env": {
+        "node": true,
+        "browser": false
+      }
+    }
   ]
 }

@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef } from 'react';
 import { shortestDelta, smoothAngle } from '../utils/angle';
+import { createDoubleTapDetector } from '../utils/doubleTap';
 
 // Постоянная времени сглаживания: больше — плавнее, но с бóльшим запаздыванием
 const SMOOTHING_TAU_MS = 150;
@@ -32,10 +33,11 @@ const formatHeading = (deg) => `${String(Math.round(((deg % 360) + 360) % 360) %
 
 // subscribeHeading — подписка на сырой азимут устройства (из useDeviceOrientation),
 // bearing — азимут на выбранную точку (null, пока неизвестно местоположение),
-// targetLabel — буква выбранной точки для маркера на кольце.
+// targetLabel — буква выбранной точки для маркера на кольце,
+// onDoubleTap — двойное нажатие на циферблат (переключение режима «только компас»), isFocus — режим включён.
 // Все повороты применяются напрямую к DOM в requestAnimationFrame через transform, без перерисовки React
 // и без CSS-фильтров на вращающихся слоях — иначе на iOS возвращаются рывки.
-function CompassDial({ subscribeHeading, bearing, targetLabel }) {
+function CompassDial({ subscribeHeading, bearing, targetLabel, onDoubleTap, isFocus = false }) {
   const faceRef = useRef(null);
   const arrowRef = useRef(null);
   const orbitRef = useRef(null);
@@ -43,6 +45,8 @@ function CompassDial({ subscribeHeading, bearing, targetLabel }) {
   const headingTextRef = useRef(null);
   const bearingRef = useRef(bearing);
   const wakeRef = useRef(() => {});
+  const tapRef = useRef(null);
+  if (tapRef.current === null) tapRef.current = createDoubleTapDetector();
 
   useEffect(() => {
     let targetHeading = null;
@@ -124,9 +128,35 @@ function CompassDial({ subscribeHeading, bearing, targetLabel }) {
 
   const hidden = bearing === null;
 
+  // Двойное нажатие: только основная кнопка мыши или касание; с клавиатуры — Enter или пробел.
+  // Экранный диктор активирует элемент одиночным синтетическим кликом (detail === 0) —
+  // он тоже переключает режим. Обычный клик пальцем или мышью (detail ≥ 1) не переключает.
+  const tapHandlers = {
+    role: 'button',
+    tabIndex: 0,
+    'aria-label': 'Режим «только компас» (двойное нажатие)',
+    'aria-pressed': isFocus,
+    onPointerDown: (e) => {
+      if (e.isPrimary && e.button === 0) tapRef.current.down(e.clientX, e.clientY);
+    },
+    onPointerUp: (e) => {
+      if (e.isPrimary && tapRef.current.up(e.clientX, e.clientY, e.timeStamp)) onDoubleTap();
+    },
+    onPointerCancel: () => tapRef.current.cancel(),
+    onClick: (e) => {
+      if (e.detail === 0) onDoubleTap();
+    },
+    onKeyDown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onDoubleTap();
+      }
+    }
+  };
+
   return (
     <div className="dial-section">
-      <div className="dial-stage">
+      <div className="dial-stage dial-stage--tappable" {...tapHandlers}>
         <span className="dial-section__crosshair-h" aria-hidden="true" />
         <span className="dial-section__crosshair-v" aria-hidden="true" />
 

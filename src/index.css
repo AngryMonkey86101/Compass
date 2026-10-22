@@ -97,6 +97,11 @@ input {
 .tone-muted { color: var(--text-3); }
 .tone-neutral { color: var(--text-2); }
 
+/* Атрибут hidden сильнее display у компонентов (скрытый экран компаса остаётся смонтированным) */
+[hidden] {
+  display: none !important;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -220,6 +225,17 @@ input {
   border-bottom: 1px solid var(--line);
 }
 
+.status-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.status-bar__title:focus {
+  outline: none;
+}
+
 .status-bar__title {
   margin: 0;
   font-size: 18px;
@@ -286,7 +302,18 @@ input {
   gap: var(--s-2);
 }
 
-/* ---------- Импорт KMZ/KML ---------- */
+/* Три кнопки списка точек (Импорт, Экспорт, +) на узких экранах: компактнее, а при нехватке
+   места переносятся под заголовок, не обрезаясь */
+.panel__header--wrap {
+  flex-wrap: wrap;
+  row-gap: var(--s-2);
+}
+
+.panel__actions .btn:not(.btn--icon) {
+  padding: 0 var(--s-3);
+}
+
+/* ---------- Импорт ---------- */
 
 .import {
   display: flex;
@@ -338,6 +365,36 @@ input {
 
 .import__preview li {
   overflow-wrap: anywhere;
+}
+
+/* ---------- Экспорт ---------- */
+
+.export__formats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.export__format {
+  flex-direction: column;
+  gap: 0;
+  padding: var(--s-2);
+}
+
+.export__hint {
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.form__parsed {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 18px;
 }
 
 /* ---------- Кнопки ---------- */
@@ -393,6 +450,15 @@ input {
 
 .btn--danger:hover {
   background: rgba(255, 107, 91, 0.12);
+}
+
+.btn--ghost {
+  border-color: transparent;
+  color: var(--text);
+}
+
+.btn--ghost:hover {
+  background: var(--surface-hover);
 }
 
 .btn--icon {
@@ -506,6 +572,12 @@ input {
   overflow-wrap: anywhere;
 }
 
+.target__note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 18px;
+}
+
 .target__metrics {
   display: flex;
   align-items: baseline;
@@ -544,6 +616,10 @@ input {
 .dial {
   position: relative;
   flex: none;
+  /* запасная ширина для WebView без min() (Chrome < 79): иначе циферблат сжался бы в ноль —
+     всё его содержимое спозиционировано абсолютно */
+  width: 340px;
+  max-width: 100%;
   width: min(100%, 340px);
 }
 
@@ -726,6 +802,311 @@ input {
   font-size: 15px;
   line-height: 20px;
   overflow-wrap: anywhere;
+}
+
+/* Двойное нажатие на циферблат: без увеличения страницы по двойному касанию и выделения текста */
+.dial-stage--tappable {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.dial-stage--tappable:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ---------- Режим «только компас» ---------- */
+
+.app--focus {
+  justify-content: center;
+}
+
+.app--focus .status-bar,
+.app--focus .install,
+.app--focus .layout__target,
+.app--focus .layout__list,
+.app--focus .layout__coords,
+.app--focus .version {
+  display: none;
+}
+
+.app--focus .layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  flex: 1;
+  max-width: none;
+}
+
+/* Секция циферблата на всю ширину: иначе при центрировании она сжимается до содержимого,
+   а ширина циферблата считается в процентах от неё */
+.app--focus .layout__dial {
+  position: static;
+  align-items: stretch;
+}
+
+/* Циферблат по меньшей стороне экрана: под ним курс, строка цели и, пока нет разрешения, кнопка «Включить компас» (~200 px) */
+.app--focus .dial {
+  width: 100%;
+  max-width: 720px;
+  width: min(100%, calc(100vh - 200px), 720px);
+  width: min(100%, calc(100dvh - 200px), 720px);
+}
+
+.app--focus .dial__heading {
+  font-size: 28px;
+  line-height: 32px;
+}
+
+.focus-target {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--s-2);
+  max-width: 100%;
+  margin: 0;
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.focus-target__label {
+  color: var(--target);
+  font-weight: 700;
+}
+
+.focus-target__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-hint {
+  position: fixed;
+  left: 50%;
+  top: max(var(--s-4), env(safe-area-inset-top));
+  z-index: 10;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--s-4));
+  margin: 0;
+  padding: var(--s-2) var(--s-3);
+  background: var(--bg-elev);
+  border: 1px solid var(--accent);
+  font-size: 14px;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ---------- Вспомогательные экраны: меню, мануал, QR-код ---------- */
+
+.screen__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.screen__text {
+  margin: 0;
+}
+
+.menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+@media (min-width: 600px) {
+  .menu {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  width: 100%;
+  min-height: 88px;
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu__item:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.menu__icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.menu__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.menu__title {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.menu__hint {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.manual {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.manual__summary {
+  min-height: 28px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.manual__section[open] .manual__summary {
+  color: var(--accent);
+}
+
+.manual__body p {
+  margin: var(--s-2) 0 0;
+  color: var(--text-2);
+}
+
+.manual__body b {
+  color: var(--text);
+}
+
+.qr {
+  align-items: center;
+  text-align: center;
+}
+
+/* Белое поле вокруг кода — сканерам нужен светлый фон и тихая зона */
+.qr__code {
+  display: block;
+  width: min(100%, 296px);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.qr__url {
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+  -webkit-user-select: all;
+  user-select: all;
+}
+
+.qr .btn-row {
+  width: 100%;
+}
+
+/* ---------- Группы ---------- */
+
+.members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.member {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.member:last-child {
+  border-bottom: none;
+}
+
+.member__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.member__nick {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.member__age {
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.member__distance {
+  font-size: 16px;
+}
+
+.member__actions {
+  flex: none;
+}
+
+.member__actions > .btn {
+  flex: none;
+  padding: 0 var(--s-3);
+}
+
+.notice {
+  border-color: var(--accent);
+}
+
+/* Точка «Группа» в строке статуса мигает, пока позиция передаётся */
+.status-item__dot--pulse {
+  animation: sharing-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sharing-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-item__dot--pulse {
+    animation: none;
+  }
 }
 
 /* ---------- Лента событий ---------- */

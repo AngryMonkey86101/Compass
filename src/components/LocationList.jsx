@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import AddLocationForm from './AddLocationForm';
 import ImportPanel from './ImportPanel';
+import ExportPanel from './ExportPanel';
 import useFileImport from '../hooks/useFileImport';
 
+// Строка списка получает только простые значения: при каждом обновлении GPS объекты точек
+// создаются заново, и без memo перерисовывался бы весь список (при сотнях точек — рывки стрелки).
+// Перерисовываются только строки, у которых изменился текст расстояния или выбор.
+const LocationRow = memo(function LocationRow({ id, label, name, distance, selected, onSelect }) {
+  return (
+    <li>
+      <button type="button" className="loc-item" aria-pressed={selected} onClick={() => onSelect(id)}>
+        <span className="marker" aria-hidden="true">{label}</span>
+        <span className="loc-item__name">{name}</span>
+        <span className="loc-item__distance mono">{distance ?? '—'}</span>
+      </button>
+    </li>
+  );
+});
 
 // Список точек с буквенными маркерами и дистанцией до каждой; «+» раскрывает форму новой точки,
 // удаление выбранной — с подтверждением прямо в панели (window.confirm блокируется в PWA);
-// «Импорт» загружает точки из файла KMZ/KML
-export default function LocationList({ items, selectedId, onSelect, onAdd, onImport, onDelete }) {
-  const [isAdding, setIsAdding] = useState(false);
+// «Импорт» загружает точки из файла KMZ/KML/GPX/GeoJSON/CSV, «Экспорт» сохраняет их в файл
+export default function LocationList({ items, selectedId, onSelect, onAdd, onImport, onExport, onDelete }) {
+  // открытая панель под заголовком: форма новой точки или выбор формата экспорта
+  const [openPanel, setOpenPanel] = useState(null);
+  const isAdding = openPanel === 'add';
+  const isExporting = openPanel === 'export' && items.length > 0;
   // id точки, удаление которой подтверждается: подтверждение не переходит на другую выбранную точку
   const [confirmId, setConfirmId] = useState(null);
   const selected = items.find((item) => item.id === selectedId) ?? null;
@@ -20,7 +38,7 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
     // сброс, чтобы повторный выбор того же файла снова вызвал change
     e.target.value = '';
     if (!file) return;
-    setIsAdding(false);
+    setOpenPanel(null);
     fileImport.parse(file);
   };
 
@@ -31,13 +49,19 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
 
   const handleAdd = (name, lat, lon) => {
     onAdd(name, lat, lon);
-    setIsAdding(false);
+    setOpenPanel(null);
   };
 
-  const handleSelect = (id) => {
+  const togglePanel = (panel) => {
+    fileImport.clear();
+    setOpenPanel((current) => (current === panel ? null : panel));
+  };
+
+  // Стабильная функция для memo-строк (onSelect из useLocations тоже стабилен)
+  const handleSelect = useCallback((id) => {
     setConfirmId(null);
     onSelect(id);
-  };
+  }, [onSelect]);
 
   const handleDelete = () => {
     if (isConfirming) onDelete(selected.id);
@@ -46,7 +70,7 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
 
   return (
     <section className="panel" aria-labelledby="loc-list-title">
-      <div className="panel__header">
+      <div className="panel__header panel__header--wrap">
         <h2 id="loc-list-title" className="label">Точки · {items.length}</h2>
         <div className="panel__actions">
           {/* Нативный выбор файла: поле внутри <label>, без программного click() — его игнорируют
@@ -57,17 +81,26 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
             <input
               type="file"
               className="visually-hidden"
-              aria-label="Импорт точек из файла KMZ или KML"
+              aria-label="Импорт точек из файла KML, KMZ, GPX, GeoJSON или CSV"
               onChange={handleFileChange}
             />
             Импорт
           </label>
           <button
             type="button"
+            className="btn btn--secondary"
+            aria-expanded={isExporting}
+            disabled={items.length === 0}
+            onClick={() => togglePanel('export')}
+          >
+            Экспорт
+          </button>
+          <button
+            type="button"
             className="btn btn--icon"
             aria-label={isAdding ? 'Закрыть форму новой точки' : 'Добавить точку'}
             aria-expanded={isAdding}
-            onClick={() => setIsAdding((v) => !v)}
+            onClick={() => togglePanel('add')}
           >
             {isAdding ? '×' : '+'}
           </button>
@@ -76,25 +109,24 @@ export default function LocationList({ items, selectedId, onSelect, onAdd, onImp
 
       <ImportPanel {...fileImport} onConfirm={handleImportConfirm} onCancel={fileImport.clear} />
 
-      {isAdding && <AddLocationForm onAdd={handleAdd} onCancel={() => setIsAdding(false)} />}
+      {isExporting && <ExportPanel count={items.length} onExport={onExport} onClose={() => setOpenPanel(null)} />}
+
+      {isAdding && <AddLocationForm onAdd={handleAdd} onCancel={() => setOpenPanel(null)} />}
 
       {items.length === 0 ? (
         <p className="empty">Точек нет. Нажмите «+» или «Импорт», чтобы добавить.</p>
       ) : (
         <ul className="loc-list">
           {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                className="loc-item"
-                aria-pressed={item.id === selectedId}
-                onClick={() => handleSelect(item.id)}
-              >
-                <span className="marker" aria-hidden="true">{item.label}</span>
-                <span className="loc-item__name">{item.name}</span>
-                <span className="loc-item__distance mono">{item.distance ?? '—'}</span>
-              </button>
-            </li>
+            <LocationRow
+              key={item.id}
+              id={item.id}
+              label={item.label}
+              name={item.name}
+              distance={item.distance}
+              selected={item.id === selectedId}
+              onSelect={handleSelect}
+            />
           ))}
         </ul>
       )}

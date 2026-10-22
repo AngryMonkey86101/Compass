@@ -8,5 +8,19 @@
     "react/exhaustive-deps": "warn",
     "react/only-export-components": ["warn", { "allowConstantExport": true }],
     "no-unused-vars": "warn"
-  }
+  },
+  "ignorePatterns": [
+    "dist/**"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "server/**/*.js"
+      ],
+      "env": {
+        "node": true,
+        "browser": false
+      }
+    }
+  ]
 }

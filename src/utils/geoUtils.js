@@ -6,9 +6,11 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const dLat = toRadians(lat2 - lat1);
   const dLon = toRadians(lon2 - lon1);
 
-  const a =
+  // ограничение [0, 1]: для точно противоположных точек планеты погрешность округления
+  // даёт a чуть больше 1, и корень из (1 - a) превращается в NaN
+  const a = Math.min(1, Math.max(0,
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2;
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2));
 
   return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

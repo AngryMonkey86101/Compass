@@ -87,3 +87,11 @@ describe('parseCoordinates', () => {
     expect(parseCoordinates('10, 181').error).toMatch(/Долгота/);
   });
 });
+
+describe('calculateDistance — противоположные точки планеты', () => {
+  it('не даёт NaN из-за округления', () => {
+    const d = calculateDistance(-5.4521, 47.1267, 5.4521, -132.8733);
+    expect(Number.isFinite(d)).toBe(true);
+    expect(d).toBeCloseTo(Math.PI * 6371, 0);
+  });
+});

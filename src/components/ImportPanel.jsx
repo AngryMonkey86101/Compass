@@ -10,8 +10,8 @@ const pluralPoints = (n) => {
   return 'точек';
 };
 
-// Предпросмотр импорта KMZ/KML: что найдено в файле и подтверждение добавления
-export default function ImportPanel({ status, fileName, fileSize, format, points, skipped, error, onConfirm, onCancel }) {
+// Предпросмотр импорта: что найдено в файле, что пропущено и почему, подтверждение добавления
+export default function ImportPanel({ status, fileName, fileSize, format, points, skipped, skipNotes, error, onConfirm, onCancel }) {
   if (status === 'idle') return null;
 
   return (
@@ -34,8 +34,13 @@ export default function ImportPanel({ status, fileName, fileSize, format, points
         <>
           <p className="import__summary">
             Найдено <span className="mono">{points.length}</span> {pluralPoints(points.length)}
-            {skipped > 0 && <span className="tone-muted"> · пропущено <span className="mono">{skipped}</span> без координат</span>}
+            {skipped > 0 && <span className="tone-muted"> · пропущено <span className="mono">{skipped}</span></span>}
           </p>
+          {skipNotes.length > 0 && (
+            <ul className="import__preview tone-muted" aria-label="Пропущено">
+              {skipNotes.map((note) => <li key={note}>{note}</li>)}
+            </ul>
+          )}
           <ul className="import__preview">
             {points.slice(0, PREVIEW_COUNT).map((point) => (
               <li key={point.name}>{point.name}</li>

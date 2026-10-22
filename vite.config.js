@@ -14,6 +14,10 @@ export default defineConfig({
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(version)
   },
+  test: {
+    // у сервера групп свои тесты на встроенном node:test (cd server && npm test)
+    exclude: ["**/node_modules/**", "server/**", "android/**", "dist/**"]
+  },
   plugins: [
     react(),
     VitePWA({

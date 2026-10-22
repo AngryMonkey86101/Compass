@@ -56,7 +56,73 @@ describe('pointsFromGeoJSON', () => {
   });
 
   it('пустой или некорректный GeoJSON', () => {
-    expect(pointsFromGeoJSON(null)).toEqual({ points: [], skipped: 0 });
-    expect(pointsFromGeoJSON({ features: [] })).toEqual({ points: [], skipped: 0 });
+    expect(pointsFromGeoJSON(null)).toEqual({ points: [], skipped: 0, skipNotes: [] });
+    expect(pointsFromGeoJSON({ features: [] })).toEqual({ points: [], skipped: 0, skipNotes: [] });
+  });
+});
+
+describe('pointsFromGeoJSON — Google Takeout и Конструктор Яндекса', () => {
+  it('Saved Places.json: название из location.name, 0,0 — координаты неизвестны', () => {
+    const r = pointsFromGeoJSON({
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [60.6035, 56.838] },
+          properties: { google_maps_url: 'http://maps.google.com/?cid=1', location: { name: 'Плотинка', address: 'Екатеринбург' } } },
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] },
+          properties: { google_maps_url: 'http://maps.google.com/?cid=2', location: { name: 'Кафе' } } },
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] },
+          properties: { google_maps_url: 'https://www.google.com/maps/search/56.9425,60.4718', location: { name: 'Ганина Яма' } } }
+      ]
+    });
+    expect(r.points).toEqual([
+      { name: 'Плотинка', lat: 56.838, lon: 60.6035 },
+      { name: 'Ганина Яма', lat: 56.9425, lon: 60.4718 }
+    ]);
+    expect(r.skipNotes).toEqual(['координаты неизвестны (так Google сохраняет часть мест) — 1']);
+  });
+
+  it('старый формат Takeout: Title и Location → Geo Coordinates', () => {
+    const r = pointsFromGeoJSON({
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] },
+        properties: { Title: 'Плотинка', Location: { 'Business Name': 'Сквер', 'Geo Coordinates': { Latitude: '56.838', Longitude: '60.6035' } } }
+      }]
+    });
+    expect(r.points).toEqual([{ name: 'Плотинка', lat: 56.838, lon: 60.6035 }]);
+  });
+
+  it('Конструктор Яндекса: iconCaption, затем первая строка description', () => {
+    const r = pointsFromGeoJSON({
+      type: 'FeatureCollection',
+      features: [
+        point(undefined, [60.6035, 56.838]),
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [60.6035, 56.838] }, properties: { iconCaption: 'Плотинка', 'marker-color': '#b51eff' } },
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [60.4718, 56.9425] }, properties: { description: 'Ганина Яма\nмонастырь' } }
+      ]
+    });
+    expect(r.points.map((p) => p.name)).toEqual(['Без названия 1', 'Плотинка', 'Ганина Яма']);
+  });
+});
+
+describe('исправления после ревью', () => {
+  it('точка ровно в 0,0 из обычного файла сохраняется, из Google Takeout — пропускается', () => {
+    expect(pointsFromGeoJSON({ features: [point('Ноль', [0, 0])] }).points).toEqual([{ name: 'Ноль', lat: 0, lon: 0 }]);
+    const takeout = { features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] },
+      properties: { google_maps_url: 'http://maps.google.com/?cid=1', location: { name: 'Кафе' } } }] };
+    expect(pointsFromGeoJSON(takeout).skipped).toBe(1);
+  });
+
+  it('битый GeoJSON не роняет разбор', () => {
+    expect(pointsFromGeoJSON({ type: 'FeatureCollection', features: {} })).toEqual({ points: [], skipped: 0, skipNotes: [] });
+    expect(firstCoordinate({ type: 'GeometryCollection', geometries: {} })).toBeNull();
+    let deep = [60, 56];
+    for (let i = 0; i < 20000; i += 1) deep = [deep];
+    expect(firstCoordinate({ type: 'Point', coordinates: deep })).toBeNull();
+  });
+
+  it('повторы имён получают свободный суффикс', () => {
+    const { points } = pointsFromGeoJSON({ features: [point('A', [1, 1]), point('A', [2, 2]), point('A (2)', [3, 3])] });
+    expect(points.map((p) => p.name)).toEqual(['A', 'A (2)', 'A (2) (2)']);
   });
 });

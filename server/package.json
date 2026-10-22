@@ -1,0 +1,14 @@
+{
+  "name": "compass-groups-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Сервер групп Компаса: хранит зашифрованные последние позиции участников",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  }
+}

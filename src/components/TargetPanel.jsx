@@ -1,5 +1,8 @@
-// Выбранная точка: буква-маркер, название, дистанция крупно и азимут
-export default function TargetPanel({ location, label, distance, bearing }) {
+const NOTE_TONE = { fresh: 'tone-ok', recent: 'tone-warn', stale: 'tone-muted', expired: 'tone-danger' };
+
+// Выбранная цель: буква-маркер (у участника группы — инициалы), название, дистанция крупно
+// и азимут. note — для участника: группа и как давно обновлялась позиция
+export default function TargetPanel({ location, label, distance, bearing, note, noteTone }) {
   if (!location) {
     return (
       <section className="panel" aria-label="Цель">
@@ -18,6 +21,7 @@ export default function TargetPanel({ location, label, distance, bearing }) {
         <span className="marker marker--target" aria-hidden="true">{label}</span>
         <span>{location.name}</span>
       </div>
+      {note && <p className={`target__note ${NOTE_TONE[noteTone] ?? 'tone-muted'}`}>{note}</p>}
       <div className="target__metrics">
         <span className="target__distance mono">
           {value}{unit && <span className="target__unit"> {unit}</span>}

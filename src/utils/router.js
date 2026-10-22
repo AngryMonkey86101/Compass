@@ -1,18 +1,28 @@
 // Экраны приложения в адресе после «#»: #/ — навигация (стартовый), #/focus — только компас,
-// #/menu, #/manual, #/qr, #/support. Переходы кладутся в историю браузера, поэтому кнопка
+// #/menu, #/manual, #/qr, #/support, #/groups; с параметром — #/group/<id>, #/join/<приглашение>. Переходы кладутся в историю браузера, поэтому кнопка
 // «Назад» на Android и в браузере работает без дополнительного кода. В установленном на iPhone
 // приложении «Назад» нет — на каждом экране есть своя кнопка возврата.
 
-const ROUTES = ['nav', 'focus', 'menu', 'manual', 'qr', 'support'];
+const ROUTES = ['nav', 'focus', 'menu', 'manual', 'qr', 'support', 'groups', 'group', 'join'];
 const CHANGE_EVENT = 'compass:routechange';
 
-// '#/manual' → 'manual'; пустой или неизвестный адрес — навигация
+const segments = (hash) => String(hash ?? '').replace(/^#\/?/, '').replace(/\/$/, '').split('/');
+
+// '#/manual' → 'manual', '#/group/abc' → 'group'; пустой или неизвестный адрес — навигация
 function parseRoute(hash) {
-  const name = String(hash ?? '').replace(/^#\/?/, '').replace(/\/$/, '');
+  const name = segments(hash)[0];
   return ROUTES.includes(name) ? name : 'nav';
 }
 
-const hashFor = (route) => (route === 'nav' ? '#/' : `#/${route}`);
+// Параметр экрана: '#/group/abc' → 'abc'; без параметра — ''
+function parseRouteParam(hash) {
+  return parseRoute(hash) === 'nav' ? '' : segments(hash).slice(1).join('/');
+}
+
+const hashFor = (route, param = '') => {
+  if (route === 'nav') return '#/';
+  return param ? `#/${route}/${param}` : `#/${route}`;
+};
 
 const notify = () => window.dispatchEvent(new Event(CHANGE_EVENT));
 
@@ -36,20 +46,28 @@ const stepBack = () => {
 // пришли (меню → «Навигация»), — это шаг назад: история не растёт, «Назад» не ходит по кругу.
 // Если приложение открыли сразу на экране (#/menu) и уходят на навигацию, запись заменяется:
 // иначе системное «Назад» вернуло бы на только что закрытый экран.
-function navigate(route) {
+function navigate(route, param = '') {
   if (backPending) return;
   const from = parseRoute(window.location.hash);
-  if (from === route) return;
+  const target = hashFor(route, param);
+  if (hashFor(from, parseRouteParam(window.location.hash)) === target) return;
   const state = window.history.state;
-  if (state?.inApp && state.from === route) {
+  if (state?.inApp && state.from === target) {
     stepBack();
     return;
   }
   if (!state?.inApp && route === 'nav') {
-    window.history.replaceState(null, '', hashFor(route));
+    window.history.replaceState(null, '', target);
   } else {
-    window.history.pushState({ inApp: true, from }, '', hashFor(route));
+    window.history.pushState({ inApp: true, from: window.location.hash || '#/' }, '', target);
   }
+  notify();
+}
+
+// Замена текущего экрана без записи в историю: после вступления по приглашению ссылка
+// с ключом группы не должна оставаться в истории браузера
+function replaceRoute(route, param = '') {
+  window.history.replaceState(window.history.state, '', hashFor(route, param));
   notify();
 }
 
@@ -80,5 +98,9 @@ function subscribeRoute(callback) {
 }
 
 const currentRoute = () => parseRoute(window.location.hash);
+const currentRouteParam = () => parseRouteParam(window.location.hash);
 
-export { ROUTES, parseRoute, hashFor, navigate, goBack, subscribeRoute, currentRoute };
+export {
+  ROUTES, parseRoute, parseRouteParam, hashFor, navigate, replaceRoute, goBack, subscribeRoute,
+  currentRoute, currentRouteParam
+};

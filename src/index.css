@@ -572,6 +572,12 @@ input {
   overflow-wrap: anywhere;
 }
 
+.target__note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 18px;
+}
+
 .target__metrics {
   display: flex;
   align-items: baseline;
@@ -1025,6 +1031,82 @@ input {
 
 .qr .btn-row {
   width: 100%;
+}
+
+/* ---------- Группы ---------- */
+
+.members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.member {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.member:last-child {
+  border-bottom: none;
+}
+
+.member__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.member__nick {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.member__age {
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.member__distance {
+  font-size: 16px;
+}
+
+.member__actions {
+  flex: none;
+}
+
+.member__actions > .btn {
+  flex: none;
+  padding: 0 var(--s-3);
+}
+
+.notice {
+  border-color: var(--accent);
+}
+
+/* Точка «Группа» в строке статуса мигает, пока позиция передаётся */
+.status-item__dot--pulse {
+  animation: sharing-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sharing-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-item__dot--pulse {
+    animation: none;
+  }
 }
 
 /* ---------- Лента событий ---------- */

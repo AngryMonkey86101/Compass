@@ -1,7 +1,7 @@
 import { accuracyTone } from '../utils/labels';
 
 // Верхняя строка: кнопка меню, название и состояние GPS и датчика — только то, что известно из хуков
-export default function StatusBar({ coords, isGeoLoading, geoError, isSensorOn, sensorError, onMenu, menuButtonRef }) {
+export default function StatusBar({ coords, isGeoLoading, geoError, isSensorOn, sensorError, onMenu, menuButtonRef, isSharing = false }) {
   let gps;
   if (coords) {
     gps = { tone: accuracyTone(coords.accuracy), text: `±${Math.round(coords.accuracy)} м`, mono: true };
@@ -38,6 +38,12 @@ export default function StatusBar({ coords, isGeoLoading, geoError, isSensorOn, 
         <span className={`status-item tone-${sensor.tone}`}>
           Датчик {sensor.text}
         </span>
+        {isSharing && (
+          <span className="status-item tone-ok" title="Позиция передаётся в группу">
+            <span className="status-item__dot status-item__dot--pulse" aria-hidden="true" />
+            Группа
+          </span>
+        )}
       </div>
     </header>
   );

@@ -8,6 +8,7 @@
 - ввод координат: `56.8380, 60.6035`, `56,838; 60,6035`, `56°50′17″N 60°36′13″E` или ссылка из Google Карт, Яндекс Карт, Яндекс Навигатора, `geo:`
 - импорт точек из файлов **KML, KMZ, GPX, GeoJSON и CSV**: точки, а также первая вершина линий, полигонов и треков; одноимённые точки при повторном импорте заменяются
 - экспорт точек в KML, GPX, CSV и GeoJSON (на телефоне — через «Поделиться» или в «Загрузки»)
+- группы до 15 человек: участники видят позиции друг друга (пока приложение открыто), сколько минут назад они обновлялись, и могут выбрать участника целью компаса; всё шифруется на телефоне — см. «Группы» ниже
 - сохранение текущего места как точки
 - режим «только компас»: двойное нажатие на циферблат скрывает интерфейс, остаются компас, курс и выбранная точка; экран не гаснет (если браузер поддерживает); выход — снова двойное нажатие, «Назад» на Android или Esc
 - главное меню (☰): «Навигация», «Мануал» (инструкция), «QR-код приложения» (ссылка на https://claude-compass.netlify.app/), «Поддержать проект» (скоро)
@@ -41,6 +42,14 @@ QR-код со ссылкой на приложение генерирует `np
 
 Иконки и заставки iOS генерирует `scripts/generate-pwa-assets.py` (нужен Pillow); он же печатает теги `apple-touch-startup-image` для `index.html`.
 
+## Группы
+
+Работают через свой сервер (`server/`, подробности и настройка VPS — в [server/README.md](server/README.md)). Название группы, ники и координаты шифруются на телефоне ключом группы (AES-GCM, Web Crypto); ключ передаётся только в приглашении — в части ссылки после `#`, которую браузер не отправляет на сервер. Сервер хранит позиции 2 часа, группы без активности удаляет через 7 дней.
+
+- **Адрес сервера** задаётся при сборке: `VITE_GROUPS_API_URL=https://<домен>` — локально в `.env.local` (образец `.env.example`), на Netlify — в переменных окружения сайта (Site configuration → Environment variables), после изменения нужна новая сборка. Пока адрес не задан, раздел «Группы» скрыт.
+- **Вступление:** по ссылке или QR-коду; ссылку можно и вставить в «Группы → Вступить по приглашению».
+- **Передача позиции** — только пока приложение открыто: при ходьбе раз в 30 с, при стоянии раз в 3 мин, сразу при сдвиге больше 50 м.
+
 ## Запуск
 
 ```bash
@@ -60,17 +69,21 @@ npm run lint      # oxlint
 src/
   components/   Compass, StatusBar, TargetPanel, CompassDial, LocationList, AddLocationForm,
                 CoordsPanel, EventFeed, ImportPanel, ExportPanel, InstallBanner, ErrorBoundary,
-                UpdatePrompt; экраны Screen, MainMenu, ManualScreen, QrScreen, SupportScreen
+                UpdatePrompt; экраны Screen, MainMenu, ManualScreen, QrScreen, SupportScreen,
+                GroupsScreen, GroupScreen, JoinScreen, InviteQr
   hooks/        useGeolocation, useDeviceOrientation, useLocations, useEventFeed,
-                useInstallPrompt, useFileImport, useRoute (экран из адреса #/…), useWakeLock
+                useInstallPrompt, useFileImport, useRoute (экран из адреса #/…), useWakeLock,
+                useGroups, useGroupSync (обмен с сервером групп), useNow
   utils/        geoUtils (расстояние, азимут, разбор координат), angle (сглаживание),
                 labels (буквы точек, точность GPS), locationText (координаты и ссылки карт),
                 importPoints + csvPoints + pointCollector (импорт файлов), exportPoints,
                 saveFile («Поделиться» или скачивание), router (экраны и история),
                 doubleTap (двойное нажатие) + тесты
+                groupCrypto, groupLogic, groupsApi, groupsStore (группы) + тесты
   assets/       app-qr.svg — QR-код со ссылкой на приложение
-  config.js     адрес опубликованного приложения
+  config.js     адрес опубликованного приложения и сервера групп
   data/         locations.json — точки по умолчанию
+server/         сервер групп: Node.js без зависимостей, SQLite, Docker, Caddy
 ```
 
 Версия в интерфейсе берётся из `package.json`.

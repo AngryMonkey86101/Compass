@@ -5,14 +5,20 @@ import MainMenu from './components/MainMenu';
 import ManualScreen from './components/ManualScreen';
 import QrScreen from './components/QrScreen';
 import SupportScreen from './components/SupportScreen';
+import GroupsScreen from './components/GroupsScreen';
+import GroupScreen from './components/GroupScreen';
+import JoinScreen from './components/JoinScreen';
 import useRoute from './hooks/useRoute';
 import { isNativeApp } from './utils/platform';
+import { GROUPS_ENABLED } from './config';
 
 const SCREENS = {
   menu: MainMenu,
   manual: ManualScreen,
   qr: QrScreen,
-  support: SupportScreen
+  support: SupportScreen,
+  // Группы — только когда задан адрес сервера (VITE_GROUPS_API_URL)
+  ...(GROUPS_ENABLED ? { groups: GroupsScreen, group: GroupScreen, join: JoinScreen } : {})
 };
 
 // Экран выбирается по адресу (#/menu, #/manual…). Компас смонтирован всегда — на других

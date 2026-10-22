@@ -9,6 +9,11 @@ import useDeviceOrientation from '../hooks/useDeviceOrientation';
 import useLocations from '../hooks/useLocations';
 import useEventFeed from '../hooks/useEventFeed';
 import useWakeLock from '../hooks/useWakeLock';
+import useGroups from '../hooks/useGroups';
+import useGroupSync from '../hooks/useGroupSync';
+import useNow from '../hooks/useNow';
+import { setTarget } from '../utils/groupsStore';
+import { formatAge, freshness, initials, positionAge } from '../utils/groupLogic';
 import StatusBar from './StatusBar';
 import TargetPanel from './TargetPanel';
 import CompassDial from './CompassDial';
@@ -39,12 +44,49 @@ export default function Compass({ isFocus = false, hidden = false }) {
     distance: coords ? formatDistance(calculateDistance(coords.lat, coords.lon, loc.lat, loc.lon)) : null
   })), [savedLocations, coords]);
 
-  const selectedItem = items.find((item) => item.id === selectedLocation?.id) ?? null;
+  // Группы: обмен с сервером, пока приложение открыто; участник группы может быть целью
+  const groupsState = useGroups();
+  useGroupSync(coords);
+  const now = useNow(15000);
+  const isSharing = groupsState.groups.some((g) => g.sharing);
 
+  // Цель-участник: последняя известная позиция и её возраст. Через 2 часа без обновлений
+  // позиции нет — цель остаётся, но направление не показывается
+  const memberTarget = useMemo(() => {
+    const t = groupsState.target;
+    const group = t && groupsState.groups.find((g) => g.groupId === t.groupId);
+    const member = group?.view?.members.find((m) => m.id === t.memberId);
+    if (!member) return null;
+    const pos = group.view.positions[member.id];
+    const age = pos ? positionAge(pos.receivedAt, group.view.offset ?? 0, now) : null;
+    const fresh = age !== null ? freshness(age) : 'expired';
+    const known = fresh !== 'expired';
+    return {
+      id: `member:${group.groupId}:${member.id}`,
+      name: member.nick,
+      label: initials(member.nick),
+      lat: known ? pos.lat : null,
+      lon: known ? pos.lon : null,
+      distance: known && coords ? formatDistance(calculateDistance(coords.lat, coords.lon, pos.lat, pos.lon)) : null,
+      note: `${group.name} · ${known ? `обновлено ${formatAge(age)}` : 'нет свежих данных'}`,
+      fresh
+    };
+  }, [groupsState, now, coords]);
+
+  const selectedItem = memberTarget ?? items.find((item) => item.id === selectedLocation?.id) ?? null;
+
+  const targetLat = selectedItem?.lat ?? null;
+  const targetLon = selectedItem?.lon ?? null;
   const bearing = useMemo(() => {
-    if (!coords || !selectedLocation) return null;
-    return calculateBearing(coords.lat, coords.lon, selectedLocation.lat, selectedLocation.lon);
-  }, [coords, selectedLocation]);
+    if (!coords || targetLat === null) return null;
+    return calculateBearing(coords.lat, coords.lon, targetLat, targetLon);
+  }, [coords, targetLat, targetLon]);
+
+  // Выбор точки в списке снимает цель-участника
+  const handleSelectPoint = useCallback((id) => {
+    setTarget(null);
+    selectLocation(id);
+  }, [selectLocation]);
 
   // Номер показа подсказки: каждый вход в режим — новый номер и новый таймер на 3 с
   // (при повторном входе подсказка не исчезает раньше времени); 0 — подсказка скрыта
@@ -135,6 +177,7 @@ export default function Compass({ isFocus = false, hidden = false }) {
         sensorError={orientError}
         onMenu={() => navigate('menu')}
         menuButtonRef={menuButtonRef}
+        isSharing={isSharing}
       />
 
       <InstallBanner />
@@ -146,6 +189,8 @@ export default function Compass({ isFocus = false, hidden = false }) {
             label={selectedItem?.label}
             distance={selectedItem?.distance}
             bearing={bearing}
+            note={memberTarget?.note}
+            noteTone={memberTarget ? memberTarget.fresh : null}
           />
         </div>
 
@@ -184,8 +229,8 @@ export default function Compass({ isFocus = false, hidden = false }) {
         <div className="layout__list">
           <LocationList
             items={items}
-            selectedId={selectedLocation?.id ?? null}
-            onSelect={selectLocation}
+            selectedId={memberTarget ? null : selectedLocation?.id ?? null}
+            onSelect={handleSelectPoint}
             onAdd={handleAdd}
             onImport={handleImport}
             onExport={handleExport}

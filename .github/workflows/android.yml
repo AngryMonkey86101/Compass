@@ -44,6 +44,10 @@ jobs:
           npm test
 
       - name: Веб-сборка и копирование в Android-проект
+        env:
+          # адрес сервера групп — переменная репозитория GROUPS_API_URL (Settings → Variables);
+          # пока она не задана, раздел «Группы» в APK скрыт
+          VITE_GROUPS_API_URL: ${{ vars.GROUPS_API_URL }}
         run: npm run android:sync
 
       - name: Отладочный APK

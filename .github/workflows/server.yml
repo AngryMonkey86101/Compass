@@ -4,7 +4,7 @@
 #   SERVER_USER      — пользователь SSH (с правом запускать docker)
 #   SERVER_SSH_KEY   — закрытый SSH-ключ для этого пользователя
 #   SERVER_KNOWN_HOSTS — строка из `ssh-keyscan <сервер>` (защита от подмены сервера)
-# Без секретов шаг выкладки пропускается, а не падает. Из пул-реквестов не выкладывается.
+# Без секретов шаг выкладки пропускается, а не падает. Выкладывается только из main.
 name: Server
 
 on:
@@ -44,7 +44,7 @@ jobs:
 
   deploy:
     needs: test
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

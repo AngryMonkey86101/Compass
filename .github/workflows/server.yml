@@ -1,15 +1,17 @@
-# Сервер групп: тесты и сборка Docker-образа на каждый пуш в server/.
+# Сервер групп: тесты и сборка Docker-образа на каждый пуш и пул-реквест с изменениями в server/.
 # Выкладка на VPS — только если в Settings → Secrets → Actions заданы:
 #   SERVER_HOST      — IP или домен сервера
 #   SERVER_USER      — пользователь SSH (с правом запускать docker)
 #   SERVER_SSH_KEY   — закрытый SSH-ключ для этого пользователя
 #   SERVER_KNOWN_HOSTS — строка из `ssh-keyscan <сервер>` (защита от подмены сервера)
-# Без секретов шаг выкладки пропускается, а не падает.
+# Без секретов шаг выкладки пропускается, а не падает. Из пул-реквестов не выкладывается.
 name: Server
 
 on:
   push:
     branches: [claude/android-capacitor, main]
+    paths: ['server/**', '.github/workflows/server.yml']
+  pull_request:
     paths: ['server/**', '.github/workflows/server.yml']
   workflow_dispatch:
 
@@ -42,6 +44,7 @@ jobs:
 
   deploy:
     needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

@@ -95,8 +95,8 @@ src/
                 groupCrypto, groupLogic, groupsApi, groupsStore (группы) + тесты
   assets/       app-qr.svg — QR-код со ссылкой на приложение
   config.js     адрес опубликованного приложения и сервера групп
-server/         сервер групп: Node.js без зависимостей, SQLite, Docker, Caddy
   data/         locations.json — точки по умолчанию
+server/         сервер групп: Node.js без зависимостей, SQLite, Docker, Caddy
 ```
 
 Версия в интерфейсе берётся из `package.json`.

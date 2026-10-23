@@ -688,6 +688,7 @@ input {
 .dial__face,
 .dial__arrow,
 .dial__orbit,
+.dial__cardinal-orbit,
 .dial__lubber {
   position: absolute;
   top: 0;
@@ -698,7 +699,20 @@ input {
 
 .dial__face,
 .dial__arrow,
-.dial__orbit {
+.dial__orbit,
+.dial__cardinal-orbit {
+  will-change: transform;
+}
+
+/* Буква стороны света: центр на радиусе 109 из 150, как прежние подписи шкалы */
+.dial__cardinal {
+  position: absolute;
+  top: 7.7%;
+  left: 50%;
+  width: 12%;
+  height: 12%;
+  margin-left: -6%;
+  overflow: visible;
   will-change: transform;
 }
 

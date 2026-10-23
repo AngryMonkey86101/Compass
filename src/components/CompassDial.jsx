@@ -25,6 +25,21 @@ const buildTicks = (filter, inner) => {
 const MINOR_TICKS = buildTicks((deg) => deg % 30 !== 0, 133);
 const MAJOR_TICKS = buildTicks((deg) => deg % 30 === 0 && deg !== 0, 124);
 
+// Стороны света вынесены из вращающейся шкалы в отдельные слои, как маркер точки:
+// слой поворачивается вместе со шкалой, а буква внутри — обратно, поэтому при любом курсе
+// она стоит прямо. Только CSS-повороты — без перерисовки SVG на каждом кадре.
+const CARDINALS = [
+  { deg: 0, letter: 'N', size: 17, fill: '#f28b6e' },
+  { deg: 90, letter: 'E', size: 15, fill: '#e6eef2' },
+  { deg: 180, letter: 'S', size: 15, fill: '#e6eef2' },
+  { deg: 270, letter: 'W', size: 15, fill: '#e6eef2' }
+].map((c) => ({
+  ...c,
+  // начальное положение до первого значения датчика: курс 0°
+  orbitStyle: { transform: `rotate(${c.deg}deg)` },
+  letterStyle: { transform: `rotate(${-c.deg}deg)` }
+}));
+
 const formatHeading = (deg) => `${String(Math.round(((deg % 360) + 360) % 360) % 360).padStart(3, '0')}°`;
 
 // subscribeHeading — подписка на сырой азимут устройства (из useDeviceOrientation),
@@ -38,6 +53,8 @@ function CompassDial({ subscribeHeading, bearing, targetLabel, onDoubleTap, isFo
   const arrowRef = useRef(null);
   const orbitRef = useRef(null);
   const orbitMarkerRef = useRef(null);
+  const cardinalOrbitRefs = useRef([]);
+  const cardinalLetterRefs = useRef([]);
   const headingTextRef = useRef(null);
   const bearingRef = useRef(bearing);
   const wakeRef = useRef(() => {});
@@ -57,6 +74,12 @@ function CompassDial({ subscribeHeading, bearing, targetLabel, onDoubleTap, isFo
       if (faceRef.current) {
         faceRef.current.style.transform = `rotate(${-heading}deg)`;
       }
+      CARDINALS.forEach(({ deg }, i) => {
+        const orbit = cardinalOrbitRefs.current[i];
+        const letter = cardinalLetterRefs.current[i];
+        if (orbit) orbit.style.transform = `rotate(${deg - heading}deg)`;
+        if (letter) letter.style.transform = `rotate(${heading - deg}deg)`;
+      });
       if (shownBearing !== null) {
         const relative = shownBearing - heading;
         if (arrowRef.current) arrowRef.current.style.transform = `rotate(${relative}deg)`;
@@ -166,13 +189,18 @@ function CompassDial({ subscribeHeading, bearing, targetLabel, onDoubleTap, isFo
             <path d={MINOR_TICKS} stroke="rgba(190,210,222,0.45)" strokeWidth="1" fill="none" />
             <path d={MAJOR_TICKS} stroke="#c9d6de" strokeWidth="1.5" fill="none" />
             <path d={`M${point(0, 124)}L${point(0, 140)}`} stroke="#f28b6e" strokeWidth="2.5" fill="none" />
-            <g fontFamily="'Fira Sans Condensed', sans-serif" fontWeight="700" textAnchor="middle">
-              <text x="150" y="46" fontSize="17" fill="#f28b6e">N</text>
-              <text x="258" y="154" fontSize="15" fill="#e6eef2">E</text>
-              <text x="150" y="262" fontSize="15" fill="#e6eef2">S</text>
-              <text x="42" y="154" fontSize="15" fill="#e6eef2">W</text>
-            </g>
           </svg>
+
+          {CARDINALS.map(({ deg, letter, size, fill, orbitStyle, letterStyle }, i) => (
+            <div key={deg} ref={(el) => { cardinalOrbitRefs.current[i] = el; }} className="dial__cardinal-orbit"
+              style={orbitStyle} aria-hidden="true">
+              <svg ref={(el) => { cardinalLetterRefs.current[i] = el; }} className="dial__cardinal" viewBox="0 0 36 36"
+                style={letterStyle}>
+                <text x="18" y={18 + size * 0.36} fontFamily="'Fira Sans Condensed', sans-serif" fontSize={size}
+                  fontWeight="700" fill={fill} textAnchor="middle">{letter}</text>
+              </svg>
+            </div>
+          ))}
 
           <svg className="dial__lubber" viewBox="0 0 300 300" aria-hidden="true">
             <path d="M150 3L144 13H156Z" fill="#e6eef2" />

@@ -1,7 +1,8 @@
 import { useState, useId } from 'react';
 import { accuracyTone } from '../utils/labels';
+import { formatDeclination } from '../utils/declination';
 
-export default function CoordsPanel({ coords, isLoading, error, onSave }) {
+export default function CoordsPanel({ coords, declination, isLoading, error, onSave }) {
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState('');
   const nameId = useId();
@@ -33,6 +34,11 @@ export default function CoordsPanel({ coords, isLoading, error, onSave }) {
       <span className={`label tone-${accuracyTone(coords.accuracy)}`}>
         Точность <span className="mono">±{Math.round(coords.accuracy)} м</span>
       </span>
+      {declination !== null && (
+        <span className="label tone-muted">
+          Магнитное склонение <span className="mono">{formatDeclination(declination)}</span> — учтено
+        </span>
+      )}
 
       {isSaving ? (
         <form className="form" onSubmit={handleSave} aria-label="Сохранить текущее место">

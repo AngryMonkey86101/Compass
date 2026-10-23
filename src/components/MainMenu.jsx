@@ -23,6 +23,12 @@ const ICONS = {
     </>
   ),
   support: <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" />,
+  privacy: (
+    <>
+      <path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z" />
+      <path d="M9 12l2 2 4-4" />
+    </>
+  ),
   groups: (
     <>
       <circle cx="9" cy="8" r="3" />
@@ -38,7 +44,8 @@ const ITEMS = [
   ...(GROUPS_ENABLED ? [{ route: 'groups', title: 'Группы', hint: 'Видеть друг друга' }] : []),
   { route: 'manual', title: 'Мануал', hint: 'Как пользоваться' },
   { route: 'qr', title: 'QR-код приложения', hint: 'Поделиться ссылкой' },
-  { route: 'support', title: 'Поддержать проект', hint: 'Скоро' }
+  { route: 'support', title: 'Поддержать проект', hint: 'Скоро' },
+  { route: 'privacy', title: 'Конфиденциальность', hint: 'Какие данные и где' }
 ];
 
 // Главное меню: плитки разделов. Закрытие возвращает на навигацию.

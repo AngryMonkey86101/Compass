@@ -1,9 +1,9 @@
 // Экраны приложения в адресе после «#»: #/ — навигация (стартовый), #/focus — только компас,
-// #/menu, #/manual, #/qr, #/support, #/groups; с параметром — #/group/<id>, #/join/<приглашение>. Переходы кладутся в историю браузера, поэтому кнопка
+// #/menu, #/manual, #/qr, #/support, #/privacy, #/groups; с параметром — #/group/<id>, #/join/<приглашение>. Переходы кладутся в историю браузера, поэтому кнопка
 // «Назад» на Android и в браузере работает без дополнительного кода. В установленном на iPhone
 // приложении «Назад» нет — на каждом экране есть своя кнопка возврата.
 
-const ROUTES = ['nav', 'focus', 'menu', 'manual', 'qr', 'support', 'groups', 'group', 'join'];
+const ROUTES = ['nav', 'focus', 'menu', 'manual', 'qr', 'support', 'privacy', 'groups', 'group', 'join'];
 const CHANGE_EVENT = 'compass:routechange';
 
 const segments = (hash) => String(hash ?? '').replace(/^#\/?/, '').replace(/\/$/, '').split('/');

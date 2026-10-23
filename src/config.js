@@ -7,3 +7,9 @@ export const APP_URL = 'https://claude-compass.netlify.app/';
 // Пока адрес пустой, раздел «Группы» в приложении скрыт.
 export const GROUPS_API_URL = (import.meta.env.VITE_GROUPS_API_URL ?? '').replace(/\/+$/, '');
 export const GROUPS_ENABLED = GROUPS_API_URL !== '';
+
+// Политика конфиденциальности (экран #/privacy). ЗАГЛУШКИ: перед публикацией в RuStore
+// указать ФИО самозанятого и e-mail для обращений; при изменении текста — дату редакции.
+export const PRIVACY_OPERATOR = '[ФИО]';
+export const PRIVACY_EMAIL = '[e-mail]';
+export const PRIVACY_UPDATED = '23 октября 2026 г.';

@@ -136,6 +136,9 @@ export default function GroupScreen() {
               Координаты шифруются на телефоне, сервер хранит их 2 часа. Остановить передачу
               можно в любой момент этой же кнопкой.
             </p>
+            <button type="button" className="btn btn--secondary" onClick={() => navigate('privacy')}>
+              Политика конфиденциальности
+            </button>
             <div className="btn-row">
               <button type="button" className="btn" onClick={acceptConsent}>Согласен, передавать</button>
               <button type="button" className="btn btn--secondary" onClick={() => setAskConsent(false)}>Отмена</button>

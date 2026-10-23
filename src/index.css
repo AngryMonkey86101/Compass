@@ -1006,9 +1006,14 @@ input {
   color: var(--accent);
 }
 
-.manual__body p {
+.manual__body p,
+.privacy p {
   margin: var(--s-2) 0 0;
   color: var(--text-2);
+}
+
+.privacy b {
+  color: var(--text);
 }
 
 .manual__body b {

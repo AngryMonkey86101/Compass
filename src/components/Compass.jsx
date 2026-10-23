@@ -12,6 +12,7 @@ import useWakeLock from '../hooks/useWakeLock';
 import useGroups from '../hooks/useGroups';
 import useGroupSync from '../hooks/useGroupSync';
 import useNow from '../hooks/useNow';
+import useDeclination from '../hooks/useDeclination';
 import { setTarget } from '../utils/groupsStore';
 import { formatAge, freshness, initials, positionAge } from '../utils/groupLogic';
 import StatusBar from './StatusBar';
@@ -36,6 +37,18 @@ export default function Compass({ isFocus = false, hidden = false }) {
   const { subscribe: subscribeHeading, isPermissionGranted, requestPermission, error: orientError } = useDeviceOrientation();
   const { savedLocations, selectedLocation, addLocation, importLocations, deleteLocation, selectLocation } = useLocations();
   const { events, push } = useEventFeed();
+
+  // Датчик даёт курс от магнитного севера, а азимут на точку считается от истинного.
+  // Поправка на склонение прибавляется к каждому значению датчика: шкала, курс и стрелка
+  // на точку — от истинного севера. Значение берётся из ref, чтобы не переподписываться.
+  const declination = useDeclination(coords);
+  const declinationRef = useRef(0);
+  useEffect(() => {
+    declinationRef.current = declination ?? 0;
+  }, [declination]);
+  const subscribeTrueHeading = useCallback((callback) => subscribeHeading((heading) => {
+    callback((((heading + declinationRef.current) % 360) + 360) % 360);
+  }), [subscribeHeading]);
 
   // Буквы, дистанции и азимут пересчитываются только при изменении позиции или списка, не при повороте
   const items = useMemo(() => savedLocations.map((loc, index) => ({
@@ -202,7 +215,7 @@ export default function Compass({ isFocus = false, hidden = false }) {
           )}
           {orientError && <p role="alert" className="error">{orientError}</p>}
           <CompassDial
-            subscribeHeading={subscribeHeading}
+            subscribeHeading={subscribeTrueHeading}
             bearing={bearing}
             targetLabel={selectedItem?.label ?? ''}
             onDoubleTap={toggleFocus}
@@ -239,7 +252,7 @@ export default function Compass({ isFocus = false, hidden = false }) {
         </div>
 
         <div className="layout__coords">
-          <CoordsPanel coords={coords} isLoading={isGeoLoading} error={geoError} onSave={handleSaveHere} />
+          <CoordsPanel coords={coords} declination={declination} isLoading={isGeoLoading} error={geoError} onSave={handleSaveHere} />
         </div>
       </div>
 

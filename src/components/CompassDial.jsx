@@ -24,10 +24,6 @@ const buildTicks = (filter, inner) => {
 };
 const MINOR_TICKS = buildTicks((deg) => deg % 30 !== 0, 133);
 const MAJOR_TICKS = buildTicks((deg) => deg % 30 === 0 && deg !== 0, 124);
-const NUMBER_LABELS = [30, 60, 120, 150, 210, 240, 300, 330].map((deg) => {
-  const [x, y] = point(deg, 108).split(' ').map(Number);
-  return { deg, x, y: y + 4 };
-});
 
 const formatHeading = (deg) => `${String(Math.round(((deg % 360) + 360) % 360) % 360).padStart(3, '0')}°`;
 
@@ -175,11 +171,6 @@ function CompassDial({ subscribeHeading, bearing, targetLabel, onDoubleTap, isFo
               <text x="258" y="154" fontSize="15" fill="#e6eef2">E</text>
               <text x="150" y="262" fontSize="15" fill="#e6eef2">S</text>
               <text x="42" y="154" fontSize="15" fill="#e6eef2">W</text>
-            </g>
-            <g fontFamily="'JetBrains Mono', monospace" fontSize="10" fill="#9fb1bd" textAnchor="middle">
-              {NUMBER_LABELS.map(({ deg, x, y }) => (
-                <text key={deg} x={x} y={y}>{deg}</text>
-              ))}
             </g>
           </svg>
 
